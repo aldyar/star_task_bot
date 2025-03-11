@@ -30,7 +30,13 @@ class Config(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     bonus_amount: Mapped[float] = mapped_column(Float)
-
+    withdraw_1: Mapped[int] = mapped_column(Integer, default=15)
+    withdraw_2: Mapped[int] = mapped_column(Integer, default=25)
+    withdraw_3: Mapped[int] = mapped_column(Integer, default=50)
+    withdraw_4: Mapped[int] = mapped_column(Integer, default=100)
+    withdraw_5: Mapped[int] = mapped_column(Integer, default=150)
+    withdraw_6: Mapped[int] = mapped_column(Integer, default=350)
+    withdraw_7: Mapped[int] = mapped_column(Integer, default=500)
 
 class Task(Base):
     __tablename__ = "tasks"

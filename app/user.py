@@ -5,7 +5,8 @@ from app.states import Chat, Image
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 #from app.generators import gpt_text, gpt_image
-from app.database.requests import set_user, get_config, get_bonus_update, update_bonus, check_tasks
+from app.database.requests import set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, get_withdraw_limit, set_referrer_id
+from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
 import random
@@ -16,6 +17,9 @@ user = Router()
 
 @user.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
+    if len(message.text.split()) > 1:
+        referrer_id = int(message.text.split(maxsplit=1)[1])
+        await state.update_data(referrer_id=referrer_id)
     emoji, captcha = random.choice(kb.captchas)  # Выбираем случайную капчу
     text = ("🤖 <b>Капча</b>\n\n"
         "1️⃣ Подпишись на <a href='https://t.me/testtt1143'>канал</a>\n\n"
@@ -50,7 +54,7 @@ async def bonus(message: Message):
     now = datetime.now()  # Получаем текущее время в UTC
     if data is None or (now - data) >= timedelta(hours=24):
         text = (
-            f'🌟 *Бонус в раз   мере {bonus}*⭐️ *начислен на ваш баланс в боте*.\n\n'
+            f'🌟 *Бонус в размере {bonus}*⭐️ *начислен на ваш баланс в боте*.\n\n'
 
         '• *Повторно получить бонус можно через 24 часа.*'
         )
@@ -67,12 +71,20 @@ async def bonus(message: Message):
     await message.answer(text,parse_mode='Markdown')
 
 @user.callback_query(F.data == 'accsess')
-async def success_callback(callback: CallbackQuery):
+async def success_callback(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    referrer_id = data.get("referrer_id")
+    """user = await get_user(callback.from_user.id)
+    if user.referrer_id is None:
+        if len(callback.message.text.split()) > 1:
+            referrer_id = int(callback.message.text.split(maxsplit=1)[1])
+            await set_referrer_id(user.id, referrer_id)"""
+
     await callback.answer("✅ Верно! Доступ разрешен.")
     await callback.message.delete()
     user = await callback.bot.get_chat(callback.from_user.id)
     username = user.username 
-    await set_user(callback.from_user.id, username)
+    await set_user(callback.from_user.id, username, referrer_id)
 
     text =   (
         "👋 *Добро пожаловать!*\n"
@@ -96,7 +108,7 @@ async def ref_system(message: Message):
     text = (
     "*Приглашай пользователей в бота и получай по 2*⭐, *как только они пройдут капчу!*\n\n"
     "*Ваша ссылка:*\n"
-    f"[{referral_link}]({referral_link})\n\n"
+    f"`{referral_link}`\n\n"
     "❓ *Как использовать свою реферальную ссылку?*\n"
     "\n"
     "• *Отправь её друзьям в личные сообщения* 👥\n"
@@ -111,6 +123,35 @@ async def ref_system(message: Message):
 
     await message.answer(text, disable_web_page_preview=True, parse_mode='Markdown')
 
+
+@user.message(F.text == '🎁Вывести звёзды')
+async def withdraw(message:Message):
+    user = await get_user(message.from_user.id)
+    keyboard = await withdraw_keyboard()
+    text = (
+        f"*Заработано: {user.balance}⭐️*\n\n"
+        '*🔻 Выбери, подарок за сколько звёзд хочешь получить:*'
+    )
+    await message.answer(text, parse_mode='Markdown', reply_markup=keyboard)
+
+
+
+@user.callback_query(lambda c: c.data and c.data.startswith("withdraw_"))
+async def handle_withdraw_callback(callback: CallbackQuery):
+    value = int(callback.data.removeprefix("withdraw_")) 
+    user = await get_user(callback.from_user.id)
+    if user.balance >= value:  
+        text = (
+    f"*⏳ Заявка на вывод {value}⭐ создана!*\n\n"
+    "*В течение 72 часов заявка будет рассмотрена администраторами и вам будет отправлен подарок,* "
+    "*из которого вы получите звёзды.*\n\n"
+    "*Следить за статусом своей заявки можно в нашем чате выводов в реальном времени:* [https://t.me/stoutput](https://t.me/stoutput)\n\n"
+    "_Не меняйте @username, иначе мы не сможем отправить подарок, а заявка будет отклонена!_"
+)
+        await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
+        await callback.message.delete()
+    else:
+        await callback.answer('Не хватает',show_alert=True)
 
 
 @user.callback_query(F.data == 'void')
