@@ -1,22 +1,24 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
-from app.states import Chat, Image
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
-#from app.generators import gpt_text, gpt_image
 from app.database.requests import set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, get_withdraw_limit, set_referrer_id
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
 import random
 from datetime import datetime, timedelta
-
+import text as txt
 user = Router()
-
+from config import ADMIN
+from app.admin import start_admin
 
 @user.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
+    #if message.from_user.id == ADMIN:
+        #await start_admin(message)
+        #return
     if len(message.text.split()) > 1:
         referrer_id = int(message.text.split(maxsplit=1)[1])
         await state.update_data(referrer_id=referrer_id)
@@ -74,30 +76,13 @@ async def bonus(message: Message):
 async def success_callback(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     referrer_id = data.get("referrer_id")
-    """user = await get_user(callback.from_user.id)
-    if user.referrer_id is None:
-        if len(callback.message.text.split()) > 1:
-            referrer_id = int(callback.message.text.split(maxsplit=1)[1])
-            await set_referrer_id(user.id, referrer_id)"""
-
     await callback.answer("✅ Верно! Доступ разрешен.")
     await callback.message.delete()
     user = await callback.bot.get_chat(callback.from_user.id)
     username = user.username 
     await set_user(callback.from_user.id, username, referrer_id)
-
-    text =   (
-        "👋 *Добро пожаловать!*\n"
-        "В нашем боте можно бесплатно зарабатывать звёзды, мы вывели уже более *250 тысяч звёзд*, посмотри –\n"
-        "[🔗 https://t.me/testtt1143](https://t.me/testtt1143)\n\n"
-        "🎁 *За регистрацию в боте, дарим тебе первую* `1⭐`, *получай больше звёзд этими способами:*\n"
-        "• 🎯 *Выполняй задания*\n"
-        "• 💎 *Забирай ежедневный бонус*\n"
-        "• 👥 *Приглашай друзей по ссылке и получай по* `1.25⭐` *за каждого, просто отправь её другу:*\n"
-        "[🔗 t.me/starfall_tg_bot?start=NjcxMjEwNTk1NQ](https://t.me/starfall_tg_bot?start=NjcxMjEwNTk1NQ)\n\n"
-        "*Как только заработаешь минимум* `15⭐`, *выводи их в разделе* «💰 *Вывести звёзды*», *мы отправим тебе подарок за выбранное количество звёзд, удачи!*\n\n"
-        "💬 *Наш чат:* [@fschatf](https://t.me/testtt1143)\n\n")
-    await callback.message.answer(text,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
+    start = await get_config('start_text')
+    await callback.message.answer(start,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
     await callback.message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
 
 
@@ -105,8 +90,9 @@ async def success_callback(callback: CallbackQuery, state: FSMContext):
 async def ref_system(message: Message):
     user_id = message.from_user.id
     referral_link = f"https://t.me/FreeStard_bot?start={user_id}"
+    change_text = await get_config('ref_text')
     text = (
-    "*Приглашай пользователей в бота и получай по 2*⭐, *как только они пройдут капчу!*\n\n"
+    f'{change_text}\n\n'
     "*Ваша ссылка:*\n"
     f"`{referral_link}`\n\n"
     "❓ *Как использовать свою реферальную ссылку?*\n"

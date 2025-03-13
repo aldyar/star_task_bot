@@ -40,7 +40,7 @@ withdraw_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(te
                                                            InlineKeyboardButton(text = '350⭐️',callback_data='350')],
                                                            [InlineKeyboardButton(text = '500⭐️',callback_data='500')]])
 
-async def withdraw_inline():
+"""async def withdraw_inline():
     # Значения по умолчанию
     default_values = [15, 25, 50, 100, 150, 350, 500]
 
@@ -57,7 +57,7 @@ async def withdraw_inline():
         ]
     )
 
-    return keyboard
+    return keyboard"""
 
 
 async def withdraw_keyboard():
@@ -70,5 +70,34 @@ async def withdraw_keyboard():
         [InlineKeyboardButton(text=f'{values[4]}⭐️', callback_data=f'withdraw_{values[4]}'),
         InlineKeyboardButton(text=f'{values[5]}⭐️', callback_data=f'withdraw_{values[5]}')],
         [InlineKeyboardButton(text=f'{values[6]}⭐️', callback_data=f'withdraw_{values[6]}')],
+    ])
+    return withdraw_inline
+
+
+#ADMIN KEYBOARDS
+main_admin = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = 'Задание'),
+                                            KeyboardButton(text = 'Реферальная система')],
+                                            [KeyboardButton(text = 'Вывод средств')],
+                                            [KeyboardButton(text = 'Бонус')]], resize_keyboard=True)
+
+tasks_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✅ Создать задание', callback_data='create_task')],
+                                                   [InlineKeyboardButton(text = '✏️ Редактировать задание', callback_data='edit_task')]])
+
+referal_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Изменить текст', callback_data='edit_ref_text')],
+                                                     [InlineKeyboardButton(text = '⭐️Изменить вознаграждение',callback_data='edit_ref_reward')]])
+
+withdraw_menu_admin = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Изменить значения', callback_data= 'editwithdraw_limit')],
+                                                            [InlineKeyboardButton(text = '💸Заявки на вывод', callback_data= 'withdraw_req')]])
+
+async def withdraw_edit_req():
+    values = await get_withdraw_limit()
+    withdraw_inline = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=f'{values[0]}⭐️', callback_data=f'edit_{values[0]}'),
+        InlineKeyboardButton(text=f'{values[1]}⭐️', callback_data=f'edit_{values[1]}')],
+        [InlineKeyboardButton(text=f'{values[2]}⭐️', callback_data=f'edit_{values[2]}'),
+        InlineKeyboardButton(text=f'{values[3]}⭐️', callback_data=f'edit_{values[3]}')],
+        [InlineKeyboardButton(text=f'{values[4]}⭐️', callback_data=f'edit_{values[4]}'),
+        InlineKeyboardButton(text=f'{values[5]}⭐️', callback_data=f'edit_{values[5]}')],
+        [InlineKeyboardButton(text=f'{values[6]}⭐️', callback_data=f'edit_{values[6]}')],
     ])
     return withdraw_inline

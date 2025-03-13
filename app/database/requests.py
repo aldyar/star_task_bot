@@ -3,6 +3,8 @@ from app.database.models import User, Config, Task, TaskCompletion
 from sqlalchemy import select, update, delete, desc
 from decimal import Decimal
 from datetime import datetime
+import text as txt
+
 
 def connection(func):
     async def inner(*args, **kwargs):
@@ -17,11 +19,13 @@ async def set_user(session, tg_id, username, referrer_id):
 
     if not user:
         session.add(User(tg_id=tg_id, balance='1', username = username, referrer_id = referrer_id))
+        referrer = await session.scalar(select(User).where(User.tg_id == referrer_id))
+        ref_reward = await session.scalar(select(Config.ref_reward))
+        if referrer:
+            referrer.balance += ref_reward
+
         await session.commit()
     
-    elif user.referrer_id is None:
-        user.referrer_id = referrer_id
-        await session.commit()
 
 
 @connection
@@ -63,6 +67,13 @@ async def check_tasks(session, tg_id):
     )
     return list(active_tasks.all())  # Возвращаем список объектов Task
 
+
+@connection
+async def get_all_tasks(session):
+    result = await session.execute(select(Task))
+    return result.scalars().all()
+
+
 @connection
 async def get_withdraw_limit(session):
     result = await session.scalar(select(Config).limit(1))  # Получаем первую строку таблицы Config
@@ -83,6 +94,7 @@ async def get_user(session,tg_id):
     result = await session.scalar(select(User).where(User.tg_id == tg_id))
     return result
 
+
 @connection
 async def set_referrer_id(session,tg_id, referrer_id):
     user = await session.scalar(select(User).where(User.tg_id == tg_id))
@@ -90,3 +102,76 @@ async def set_referrer_id(session,tg_id, referrer_id):
     if user:
         user.referrer_id = referrer_id
         await session.commit()
+
+
+@connection
+async def create_config(session):
+    existing_config = await session.get(Config, 1)
+    
+    if existing_config:
+        return
+    
+    new_config = Config(
+        bonus_amount = 1.0,
+        start_text = txt.start,
+        ref_reward = 2.0,
+        ref_text = txt.ref
+    )
+
+    session.add(new_config)
+    await session.commit()
+
+@connection
+async def get_task(session, task_id):
+    task = await session.scalar(select(Task).where(Task.id == task_id))
+    return task
+
+
+@connection
+async def edit_task_reward(session, task_id, reward):
+    task = await session.scalar(select(Task).where(Task.id == task_id))
+    if task:
+        task.reward = reward
+        await session.commit()
+
+
+@connection 
+async def edit_task_active(session,task_id):
+    task = await session.scalar(select(Task).where(Task.id == task_id))
+    if task:
+        task.is_active = False
+        await session.commit()
+
+
+@connection
+async def edit_task_total_completion(session, task_id, content):
+    task = await session.scalar(select(Task).where(Task.id == task_id))
+    if task:
+        task.total_completions += content
+        await session.commit()
+
+
+@connection
+async def edit_ref_text(session, text):
+    config = await session.get(Config, 1)  # Предполагаем, что у тебя есть запись с id=1
+    if config:
+        config.ref_text = text  # Меняем текст в базе
+        await session.commit()  # Сохраняем изменения
+
+
+@connection
+async def edit_ref_reward(session, reward):
+    config = await session.get(Config,1)
+    if config:
+        config.ref_reward = reward
+        await session.commit()
+
+@connection 
+async def create_task(session, link, reward, total_completions):
+    new_task = Task(
+        link=link,
+        reward=reward,
+        total_completions=total_completions
+    )   
+    session.add(new_task)
+    await session.commit()
