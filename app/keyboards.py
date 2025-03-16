@@ -78,7 +78,8 @@ async def withdraw_keyboard():
 main_admin = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = 'Задание'),
                                             KeyboardButton(text = 'Реферальная система')],
                                             [KeyboardButton(text = 'Вывод средств')],
-                                            [KeyboardButton(text = 'Бонус')]], resize_keyboard=True)
+                                            [KeyboardButton(text = 'Бонус'),
+                                             KeyboardButton(text = 'Статистика')]], resize_keyboard=True)
 
 tasks_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✅ Создать задание', callback_data='create_task')],
                                                    [InlineKeyboardButton(text = '✏️ Редактировать задание', callback_data='edit_task')]])
@@ -92,12 +93,16 @@ withdraw_menu_admin = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButto
 async def withdraw_edit_req():
     values = await get_withdraw_limit()
     withdraw_inline = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=f'{values[0]}⭐️', callback_data=f'edit_{values[0]}'),
-        InlineKeyboardButton(text=f'{values[1]}⭐️', callback_data=f'edit_{values[1]}')],
-        [InlineKeyboardButton(text=f'{values[2]}⭐️', callback_data=f'edit_{values[2]}'),
-        InlineKeyboardButton(text=f'{values[3]}⭐️', callback_data=f'edit_{values[3]}')],
-        [InlineKeyboardButton(text=f'{values[4]}⭐️', callback_data=f'edit_{values[4]}'),
-        InlineKeyboardButton(text=f'{values[5]}⭐️', callback_data=f'edit_{values[5]}')],
-        [InlineKeyboardButton(text=f'{values[6]}⭐️', callback_data=f'edit_{values[6]}')],
+        [InlineKeyboardButton(text=f'{values[0]}⭐️', callback_data=f'editlimit_1'),
+        InlineKeyboardButton(text=f'{values[1]}⭐️', callback_data=f'editlimit_2')],
+        [InlineKeyboardButton(text=f'{values[2]}⭐️', callback_data=f'editlimit_3'),
+        InlineKeyboardButton(text=f'{values[3]}⭐️', callback_data=f'editlimit_4')],
+        [InlineKeyboardButton(text=f'{values[4]}⭐️', callback_data=f'editlimit_5'),
+        InlineKeyboardButton(text=f'{values[5]}⭐️', callback_data=f'editlimit_6')],
+        [InlineKeyboardButton(text=f'{values[6]}⭐️', callback_data=f'editlimit_7')],
     ])
     return withdraw_inline
+
+edit_bonus = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить',callback_data='editbonus')]])
+
+stat_edit = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Сортировать по дате',callback_data='num_date')]])

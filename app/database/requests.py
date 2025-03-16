@@ -4,6 +4,7 @@ from sqlalchemy import select, update, delete, desc
 from decimal import Decimal
 from datetime import datetime
 import text as txt
+from sqlalchemy import and_
 
 
 def connection(func):
@@ -23,6 +24,7 @@ async def set_user(session, tg_id, username, referrer_id):
         ref_reward = await session.scalar(select(Config.ref_reward))
         if referrer:
             referrer.balance += ref_reward
+            referrer.referral_count += 1
 
         await session.commit()
     
@@ -175,3 +177,60 @@ async def create_task(session, link, reward, total_completions):
     )   
     session.add(new_task)
     await session.commit()
+
+
+@connection
+async def edit_withdraw_limit(session, column_name: str, new_value: int):
+    # Получаем текущий конфиг (должен быть один)
+    config = await session.scalar(select(Config).where(Config.id == 1))
+    
+    if config:
+        # Устанавливаем новое значение для переданной колонки
+        setattr(config, column_name, new_value)
+        
+        # Сохраняем изменения
+        await session.commit()
+
+
+@connection
+async def edit_bonus(session,bonus_amount):
+    config = await session.scalar(select(Config).limit(1))  # Получаем объект Config, а не просто значение
+    if config:
+        config.bonus_amount = bonus_amount  # Изменяем значение `bonus_amount` в объекте Config
+        await session.commit()  # Сохраняем изменения в базе данных
+
+
+@connection
+async def get_all_users(session):
+    users = await session.scalars(select(User))
+    return users.all()  # Возвращаем всех пользователей в виде списка
+
+
+@connection
+async def get_today_users(session):
+    today = datetime.now().date()
+    result = await session.execute(
+        select(User)
+        .where(User.register_date >= today)
+        .order_by(User.referral_count.desc())  # Сортировка по количеству приглашений
+    )
+    return result.scalars().all()
+
+
+@connection
+async def get_all_users_date(session, date_1, date_2):
+    # Преобразуем даты из строки в объект datetime
+    date_1_obj = datetime.strptime(date_1, '%d-%m-%Y')
+    date_2_obj = datetime.strptime(date_2, '%d-%m-%Y')
+    
+    # Запрос к БД с фильтрацией по дате регистрации
+    query = select(User).where(
+        and_(
+            User.registration_date >= date_1_obj,
+            User.registration_date <= date_2_obj
+        )
+    )
+    
+    result = await session.execute(query)
+    users = result.scalars().all()
+    return users

@@ -24,6 +24,8 @@ class User(Base):
     balance: Mapped[float] = mapped_column(Float, default=0.0)  # Баланс с плавающей запятой
     referrer_id: Mapped[int] = mapped_column(BigInteger, nullable=True)  # ID рефера, может быть пустым
     bonus_update: Mapped[datetime] = mapped_column(DateTime, nullable=True)  
+    register_date: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
+    referral_count: Mapped[int] = mapped_column(Integer,default=0)
 
 class Config(Base):
     __tablename__ = 'config'

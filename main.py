@@ -4,6 +4,8 @@ from config import TOKEN
 from app.admin import admin as admin_router 
 from app.admin_ref import admin as admin_ref_router
 from app.admin_withdraw import admin as admin_withdraw
+from app.admin_bonus import admin as admin_bonus
+from app.admin_statistics import admin as admin_stat
 from app.user import user
 from app.database.models import async_main
 from app.database.requests import create_config
@@ -12,7 +14,7 @@ from app.database.requests import create_config
 async def main():
     bot = Bot(token=TOKEN)
     dp = Dispatcher()
-    dp.include_routers(admin_router,admin_ref_router,admin_withdraw, user)
+    dp.include_routers(admin_router,admin_ref_router,admin_withdraw,admin_bonus,admin_stat, user)
     dp.startup.register(on_startup)
     await dp.start_polling(bot)
 

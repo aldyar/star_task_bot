@@ -13,12 +13,16 @@ import text as txt
 user = Router()
 from config import ADMIN
 from app.admin import start_admin
+import uuid
 
 @user.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
-    #if message.from_user.id == ADMIN:
-        #await start_admin(message)
-        #return
+    user = await get_user(message.from_user.id)
+    if user:  # Если пользователь уже есть в базе данных
+        await success_message(message)
+        return
+    
+
     if len(message.text.split()) > 1:
         referrer_id = int(message.text.split(maxsplit=1)[1])
         await state.update_data(referrer_id=referrer_id)
@@ -28,6 +32,12 @@ async def cmd_start(message: Message, state: FSMContext):
         f"2️⃣ Нажми на {emoji} ниже, чтобы начать пользоваться ботом и получать звёзды, "
         "после прохождения начислим тебе 1⭐ на баланс бота:")
     await message.answer(text, reply_markup=captcha, parse_mode="HTML", disable_web_page_preview=True)
+
+
+async def success_message(message: Message):
+    start = await get_config('start_text')
+    await message.answer(start,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
+    await message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
 
 
 @user.message(F.text == '🎯Задания')
@@ -91,6 +101,7 @@ async def ref_system(message: Message):
     user_id = message.from_user.id
     referral_link = f"https://t.me/FreeStard_bot?start={user_id}"
     change_text = await get_config('ref_text')
+    user = await get_user(user_id)
     text = (
     f'{change_text}\n\n'
     "*Ваша ссылка:*\n"
@@ -102,7 +113,7 @@ async def ref_system(message: Message):
     "• *Оставь её в комментариях или чатах* 💬\n"
     "• *Распространяй ссылку в соцсетях: TikTok, Instagram, WhatsApp и других* 🌐\n"
     "\n\n"
-    "🗣 *Вы пригласили:* 0"
+    f"🗣 *Вы пригласили:* {user.referral_count}"
 )
 
 
