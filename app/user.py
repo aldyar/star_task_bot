@@ -3,7 +3,11 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
+<<<<<<< HEAD
 from app.database.requests import set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, get_withdraw_limit, set_referrer_id
+=======
+from app.database.requests import set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, get_withdraw_limit, set_referrer_id, create_transaction
+>>>>>>> 0845efb (Первый коммит)
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
@@ -134,7 +138,11 @@ async def withdraw(message:Message):
 
 
 @user.callback_query(lambda c: c.data and c.data.startswith("withdraw_"))
+<<<<<<< HEAD
 async def handle_withdraw_callback(callback: CallbackQuery):
+=======
+async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
+>>>>>>> 0845efb (Первый коммит)
     value = int(callback.data.removeprefix("withdraw_")) 
     user = await get_user(callback.from_user.id)
     if user.balance >= value:  
@@ -145,18 +153,54 @@ async def handle_withdraw_callback(callback: CallbackQuery):
     "*Следить за статусом своей заявки можно в нашем чате выводов в реальном времени:* [https://t.me/stoutput](https://t.me/stoutput)\n\n"
     "_Не меняйте @username, иначе мы не сможем отправить подарок, а заявка будет отклонена!_"
 )
+<<<<<<< HEAD
         await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
         await callback.message.delete()
+=======
+        message_text = (
+        f"📢 Новая заявка на вывод!\n\n"
+        f"👤 Пользователь: {user.username or 'Не указан'}\n"
+        f"🆔 TG ID: {user.tg_id}\n"
+        f"💰 Сумма: {value} ⭐\n"
+        f"⚡ Проверьте и обработайте запрос."
+    )
+
+        await create_transaction(callback.from_user.id, value)
+        await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
+        await callback.message.delete()
+        for admin_id in ADMIN:
+            await bot.send_message(admin_id, message_text)
+>>>>>>> 0845efb (Первый коммит)
     else:
         await callback.answer('Не хватает',show_alert=True)
 
 
+<<<<<<< HEAD
+=======
+async def notify_admin_new_withdrawal(bot:Bot, tg_id: int, username: str, amount: int):
+    """Отправляет уведомление админу о новой заявке на вывод."""
+    message_text = (
+        f"📢 Новая заявка на вывод!\n\n"
+        f"👤 Пользователь: {username or 'Не указан'}\n"
+        f"🆔 TG ID: {tg_id}\n"
+        f"💰 Сумма: {amount} ₽\n"
+        f"⚡ Проверьте и обработайте запрос."
+    )
+
+    try:
+        await bot.send_message(ADMIN, message_text)
+    except Exception as e:
+        print(f"Ошибка при отправке уведомления админу: {e}")
+
+
+>>>>>>> 0845efb (Первый коммит)
 @user.callback_query(F.data == 'void')
 async def fail_callback(callback: CallbackQuery):
     await callback.answer("❌ Неверно!")
     await callback.message.delete()
 
 
+<<<<<<< HEAD
 
 
 @user.message(F.text == 'test')
@@ -164,3 +208,5 @@ async def get_username(message: Message,bot: Bot):
     user = await message.bot.get_chat(message.from_user.id)
     username = user.username if user.username else "У вас нет username"
     await message.answer(f"Ваш username: @{username}")
+=======
+>>>>>>> 0845efb (Первый коммит)

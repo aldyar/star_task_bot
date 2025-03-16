@@ -63,6 +63,20 @@ class TaskCompletion(Base):
     task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"), nullable=False)  # ID задания
 
 
+<<<<<<< HEAD
+=======
+class Transaction(Base):
+    __tablename__ = 'transactions'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tg_id: Mapped[int] = mapped_column(ForeignKey('users.tg_id'), nullable=False)
+    username: Mapped[str] = mapped_column(ForeignKey ('users.username'), nullable=True)
+    amount: Mapped[int] = mapped_column(Integer)
+    completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    created: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
+
+    
+>>>>>>> 0845efb (Первый коммит)
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

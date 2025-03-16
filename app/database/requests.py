@@ -1,5 +1,9 @@
 from app.database.models import async_session
+<<<<<<< HEAD
 from app.database.models import User, Config, Task, TaskCompletion
+=======
+from app.database.models import User, Config, Task, TaskCompletion, Transaction
+>>>>>>> 0845efb (Первый коммит)
 from sqlalchemy import select, update, delete, desc
 from decimal import Decimal
 from datetime import datetime
@@ -233,4 +237,36 @@ async def get_all_users_date(session, date_1, date_2):
     
     result = await session.execute(query)
     users = result.scalars().all()
+<<<<<<< HEAD
     return users
+=======
+    return users
+
+
+@connection
+async def create_transaction(session,tg_id, amount):
+    user = await session.scalar(select(User).where(User.tg_id == tg_id))
+
+    new_transtaction = Transaction(
+        tg_id = tg_id,
+        username=user.username if user.username else None,
+        amount = amount
+    )
+    user.balance -= amount
+
+    session.add(new_transtaction)
+    await session.commit()
+
+@connection
+async def get_pending_transactions(session):
+    result = await session.execute(select(Transaction).where(Transaction.completed == False))
+    return result.scalars().all()
+
+
+@connection
+async def complete_transaction(session, id):
+    transaction = await session.scalar(select(Transaction).where(Transaction.id == id))
+    if transaction:
+        transaction.completed = True
+        await session.commit()
+>>>>>>> 0845efb (Первый коммит)
