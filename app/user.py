@@ -4,7 +4,8 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
-                                   get_withdraw_limit, set_referrer_id, create_transaction, get_task,is_user_subscribed,completed_task)
+                                   get_withdraw_limit, set_referrer_id, create_transaction, get_task,
+                                   is_user_subscribed,completed_task,create_task_completions,check_subscriptions)
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
@@ -65,12 +66,20 @@ async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext)
     data = await state.get_data()
     task_present = data.get("task")
     await state.clear()
+    
     link = task_present.link
     is_subscribed  = await is_user_subscribed(bot,callback.from_user.id,link)
     if is_subscribed :
-        await completed_task(task_present.id, callback.from_user.id, task_present.reward)
+        copmpleted = await completed_task(task_present.id, callback.from_user.id, task_present.reward)
+        if copmpleted:
+            message_text = (f'🎯*Задание под номером  №*{task_present.id} *завершило работу*\n\n'
+                            f'• *Ссылка на задание:* [{task_present.link}]({task_present.link})\n'
+                            f'• *Колличество выполнений:*{task_present.completed_count}')
+            admin_id = 1075213318
+            await bot.send_message(admin_id, message_text,parse_mode='Markdown', disable_web_page_preview=True)
         await callback.answer('⭐Вознаграждения зачислено')
-
+        await create_task_completions(callback.from_user.id,task_present.id)
+        await callback.message.delete()
         task = await get_task(callback.from_user.id)  # Получаем список доступных заданий
         await state.update_data(task = task)
 
@@ -193,21 +202,6 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
         await callback.answer('Не хватает',show_alert=True)
 
 
-async def notify_admin_new_withdrawal(bot:Bot, tg_id: int, username: str, amount: int):
-    """Отправляет уведомление админу о новой заявке на вывод."""
-    message_text = (
-        f"📢 Новая заявка на вывод!\n\n"
-        f"👤 Пользователь: {username or 'Не указан'}\n"
-        f"🆔 TG ID: {tg_id}\n"
-        f"💰 Сумма: {amount} ₽\n"
-        f"⚡ Проверьте и обработайте запрос."
-    )
-
-    try:
-        await bot.send_message(ADMIN, message_text)
-    except Exception as e:
-        print(f"Ошибка при отправке уведомления админу: {e}")
-
 
 @user.callback_query(F.data == 'void')
 async def fail_callback(callback: CallbackQuery):
@@ -215,3 +209,8 @@ async def fail_callback(callback: CallbackQuery):
     await callback.message.delete()
 
 
+@user.message(F.text == 'test')
+async def test_handler(message:Message,bot: Bot):
+    await message.answer("FUNC START")
+    await check_subscriptions(bot)
+    await message.answer("FUNC WORK")

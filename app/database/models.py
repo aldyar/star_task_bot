@@ -61,9 +61,10 @@ class TaskCompletion(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     tg_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # Telegram ID пользователя
-    task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"), nullable=False)  # ID задания
+    task_id: Mapped[int] = mapped_column(Integer, nullable=False)  # ID задания
     completed: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
-
+    last_checked: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    is_subscribed : Mapped[bool] = mapped_column(Boolean, default=True)
 
 class Transaction(Base):
     __tablename__ = 'transactions'

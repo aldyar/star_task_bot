@@ -280,7 +280,11 @@ async def find_active_task_from(session, start_id: int):
     
     # Если задание не активно, продолжаем искать дальше
     current_id = start_id + 1
-    while True:
+    
+    # Получаем максимальный ID существующего задания
+    max_id = await session.scalar(select(Task.id).order_by(Task.id.desc()))
+    
+    while current_id <= max_id:
         result = await session.execute(
             select(Task).where(Task.id == current_id, Task.is_active == True)
         )
@@ -290,12 +294,18 @@ async def find_active_task_from(session, start_id: int):
             return task  # Возвращаем найденное активное задание
         
         current_id += 1  # Увеличиваем id и продолжаем поиск
+    
+    # Если активных заданий не найдено, возвращаем None
+    return None
 
 
 @connection
-async def get_task(session,tg_id):
+async def get_task(session, tg_id: int):
     task_count = await session.scalar(select(User.task_count).where(User.tg_id == tg_id))
+    
     task = await find_active_task_from(task_count)
+    if not task:  # Если задание не найдено
+        return None
 
     result = await session.scalar(select(Task).where(Task.id == task.id))
     return result
@@ -335,10 +345,118 @@ async def completed_task (session,task_id, tg_id, amount):
 
     if task and user:
         user.balance += amount
-        user.task_count += 1
+        user.task_count =task_id + 1
         task.total_completions -=1
         task.completed_count +=1
-        if task.total_completions == 0:
-            task.is_active = False
 
-        await session.commit()
+        if task.total_completions <= 0:
+            task.is_active = False
+            await session.commit()
+            return True  # Возвращаем True, если total_completions стал 0
+    
+    await session.commit()
+    return False  # Возвращаем False, если task еще активен
+
+
+
+import asyncio
+from datetime import datetime, timedelta
+
+
+async def send_notification(bot: Bot, user_id: int, text: str):
+    try:
+        await bot.send_message(chat_id=user_id, text=text)
+    except Exception as e:
+        print(f"Ошибка при отправке уведомления пользователю {user_id}: {e}")
+
+
+@connection
+async def check_subscriptions(session, bot: Bot):
+    while True:
+        now = datetime.now()
+        seven_days_ago = now - timedelta(days=7)
+
+        print(f"\n--- Проверка подписок начата. Время: {now} ---")
+
+        try:
+            # Получаем все записи TaskCompletion
+            task_completions = await session.execute(
+                select(TaskCompletion)
+                .where(TaskCompletion.completed >= seven_days_ago)
+            )
+            task_completions = task_completions.scalars().all()
+            print(f"Найдено записей для проверки: {len(task_completions)}")
+
+            for task_completion in task_completions:
+                user_id = task_completion.tg_id
+                task = await session.scalar(select(Task).where(Task.id == task_completion.task_id))
+                
+                if not task:
+                    print(f"Задание с ID {task_completion.task_id} не найдено.")
+                    continue
+                
+                print(f"\nПроверка пользователя {user_id} на подписку на канал {task.link}")
+
+                try:
+                    is_subscribed = await is_user_subscribed(bot, user_id, task.link)
+                    print(f"Результат проверки подписки: {is_subscribed}")
+                except Exception as e:
+                    print(f"Ошибка при проверке подписки пользователя {user_id}: {e}")
+                    continue
+
+                #task_completion.last_checked = now
+
+                if not is_subscribed and task_completion.is_subscribed:
+                    user = await session.scalar(select(User).where(User.tg_id == user_id))
+
+                    if user:
+                        user.balance -= task.reward
+                        task_completion.is_subscribed = False
+                        await session.commit()
+                        
+                            
+                        print(f"Баланс пользователя {user_id} уменьшен на {task.reward}.")
+                       
+                        
+                        
+                        await bot.send_message(chat_id=user_id, text=f"Вы отписались от канала {task.link}. Ваш баланс уменьшен на {task.reward}.")
+
+                        print(f"Уведомление отправлено пользователю {user_id}.")
+                        
+
+                elif is_subscribed and not task_completion.is_subscribed:
+                    user = await session.scalar(select(User).where(User.tg_id == user_id))
+
+                    if user:
+                        user.balance += task.reward
+                        task_completion.is_subscribed = True
+                        
+                        
+                        await session.commit()
+                        print(f"Баланс пользователя {user_id} увеличен на {task.reward}.")
+                        
+                        
+                        
+                        await bot.send_message(chat_id=user_id, text=f"Спасибо за повторную подписку на канал {task.link}. Ваш баланс увеличен на {task.reward}.")
+
+                        print(f"Уведомление отправлено пользователю {user_id}.")
+                        
+
+        except Exception as e:
+            print(f"Ошибка при выполнении запроса к БД: {e}")
+
+        print(f"--- Проверка подписок завершена. Ожидание 24 часа. ---")
+        await asyncio.sleep(86400)  # Проверяем каждые 24 часа (86400 секунд)
+
+
+@connection
+async def create_task_completions(session,tg_id, task_id):
+    new_task_comp = TaskCompletion(
+        tg_id = tg_id,
+        task_id = task_id
+    )
+    session.add(new_task_comp)
+    await session.commit()
+
+
+
