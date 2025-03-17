@@ -75,8 +75,8 @@ async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext)
             message_text = (f'🎯*Задание под номером  №*{task_present.id} *завершило работу*\n\n'
                             f'• *Ссылка на задание:* [{task_present.link}]({task_present.link})\n'
                             f'• *Колличество выполнений:*{task_present.completed_count}')
-            admin_id = 1075213318
-            await bot.send_message(admin_id, message_text,parse_mode='Markdown', disable_web_page_preview=True)
+            for admin_id in ADMIN:
+                await bot.send_message(admin_id, message_text,parse_mode='Markdown', disable_web_page_preview=True)
         await callback.answer('⭐Вознаграждения зачислено')
         await create_task_completions(callback.from_user.id,task_present.id)
         await callback.message.delete()
@@ -135,6 +135,25 @@ async def success_callback(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(start,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
     await callback.message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
 
+
+@user.callback_query(F.data == 'task')
+async def task_handler(callback:CallbackQuery, state:FSMContext):
+    task = await get_task(callback.from_user.id)  # Получаем список доступных заданий
+
+    if not task:
+        await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        return
+
+    text = (
+        f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
+        f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
+        f"•<b> Награда: {task.reward}⭐</b>"
+    )
+    await state.update_data(task = task)
+
+
+    await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=kb.complete_inline)
+    await callback.answer()
 
 @user.message(F.text == '⭐️Заработать звёзды')
 async def ref_system(message: Message):

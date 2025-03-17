@@ -404,49 +404,39 @@ async def check_subscriptions(session, bot: Bot):
                     print(f"Ошибка при проверке подписки пользователя {user_id}: {e}")
                     continue
 
-                #task_completion.last_checked = now
-
                 if not is_subscribed and task_completion.is_subscribed:
                     user = await session.scalar(select(User).where(User.tg_id == user_id))
+                    channel_username = task.link.split("t.me/")[-1].strip("/")
+                    text = (
+                            f"❌ *Вы только что отписались от канала* [@{channel_username}]({task.link}) *и нарушили условие задания №{task.id}!*\n\n"
+                            f"   *• С баланса в боте списано {task.reward}⭐*\n\n"
+                            f"*Больше не отписывайтесь от каналов в заданиях, чтобы не получать штрафы!*"
+                            )
+                    await bot.send_message(chat_id=user_id, text=text,parse_mode='Markdown')
 
                     if user:
                         user.balance -= task.reward
                         task_completion.is_subscribed = False
                         await session.commit()
-                        
-                            
-                        print(f"Баланс пользователя {user_id} уменьшен на {task.reward}.")
-                       
-                        
-                        
-                        await bot.send_message(chat_id=user_id, text=f"Вы отписались от канала {task.link}. Ваш баланс уменьшен на {task.reward}.")
-
-                        print(f"Уведомление отправлено пользователю {user_id}.")
-                        
-
                 elif is_subscribed and not task_completion.is_subscribed:
                     user = await session.scalar(select(User).where(User.tg_id == user_id))
+                    channel_username = task.link.split("t.me/")[-1].strip("/")
+                    text = (
+                            f"✅ *Спасибо за повторную подписку на канал* [@{channel_username}]({task.link})!\n\n"
+                            f"   *• На ваш баланс в боте добавлено {task.reward}⭐️*\n\n"
+                            f"*Продолжайте оставаться подписанным, чтобы не терять свои баллы!*"
+                            )
+                    await bot.send_message(chat_id=user_id, text=text, parse_mode='Markdown')
 
                     if user:
                         user.balance += task.reward
                         task_completion.is_subscribed = True
-                        
-                        
                         await session.commit()
-                        print(f"Баланс пользователя {user_id} увеличен на {task.reward}.")
-                        
-                        
-                        
-                        await bot.send_message(chat_id=user_id, text=f"Спасибо за повторную подписку на канал {task.link}. Ваш баланс увеличен на {task.reward}.")
-
-                        print(f"Уведомление отправлено пользователю {user_id}.")
-                        
-
         except Exception as e:
             print(f"Ошибка при выполнении запроса к БД: {e}")
 
         print(f"--- Проверка подписок завершена. Ожидание 24 часа. ---")
-        await asyncio.sleep(86400)  # Проверяем каждые 24 часа (86400 секунд)
+        await asyncio.sleep(120)  # Проверяем каждые 24 часа (86400 секунд)
 
 
 @connection
