@@ -4,11 +4,7 @@ from aiogram.filters import Filter, Command, CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.states import EditLimit
-<<<<<<< HEAD
-from app.database.requests import edit_withdraw_limit
-=======
 from app.database.requests import edit_withdraw_limit, get_pending_transactions, complete_transaction
->>>>>>> 0845efb (Первый коммит)
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN
 
@@ -72,11 +68,7 @@ async def process_edit_limit_handler(message:Message, state: FSMContext):
     await edit_withdraw_limit(column_name=column_name, new_value=new_value)
 
     await message.answer(f'✅ Лимит успешно изменён на {new_value}⭐️.')
-<<<<<<< HEAD
-    await state.clear()  # Очищаем состояние
-=======
     await state.clear()
->>>>>>> 0845efb (Первый коммит)
 
     keyboard = await kb.withdraw_edit_req()
     await message.answer('*Выберите ячейку которую хотите изменить*',
@@ -89,9 +81,6 @@ async def process_edit_limit_handler(message:Message, state: FSMContext):
 
 @admin.callback_query(Admin(), F.data == 'withdraw_req')
 async def withdraw_req_handler(callback: CallbackQuery):
-<<<<<<< HEAD
-    await callback.answer('WORKING')
-=======
     withdrawals = await get_pending_transactions()  # Получаем список заявок (функция из базы)
 
     if not withdrawals:
@@ -131,4 +120,3 @@ async def complete_withdraw(callback: CallbackQuery):
         await callback.answer("Заявка успешно выполнена! ✅")
     else:
         await callback.answer("Ошибка при обновлении заявки!", show_alert=True)
->>>>>>> 0845efb (Первый коммит)

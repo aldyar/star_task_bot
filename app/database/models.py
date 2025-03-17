@@ -26,6 +26,7 @@ class User(Base):
     bonus_update: Mapped[datetime] = mapped_column(DateTime, nullable=True)  
     register_date: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
     referral_count: Mapped[int] = mapped_column(Integer,default=0)
+    task_count: Mapped[int] = mapped_column(Integer,default=1)
 
 class Config(Base):
     __tablename__ = 'config'
@@ -61,10 +62,9 @@ class TaskCompletion(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     tg_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # Telegram ID пользователя
     task_id: Mapped[int] = mapped_column(ForeignKey("tasks.id"), nullable=False)  # ID задания
+    completed: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
 
 
-<<<<<<< HEAD
-=======
 class Transaction(Base):
     __tablename__ = 'transactions'
 
@@ -76,7 +76,6 @@ class Transaction(Base):
     created: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
 
     
->>>>>>> 0845efb (Первый коммит)
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

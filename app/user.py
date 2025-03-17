@@ -3,11 +3,8 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
-<<<<<<< HEAD
-from app.database.requests import set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, get_withdraw_limit, set_referrer_id
-=======
-from app.database.requests import set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, get_withdraw_limit, set_referrer_id, create_transaction
->>>>>>> 0845efb (Первый коммит)
+from app.database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
+                                   get_withdraw_limit, set_referrer_id, create_transaction, get_task,is_user_subscribed,completed_task)
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
@@ -45,23 +42,53 @@ async def success_message(message: Message):
 
 
 @user.message(F.text == '🎯Задания')
-async def get_task(message: Message):
-    tasks = await check_tasks(message.from_user.id)  # Получаем список доступных заданий
+async def get_task_hander(message: Message,state: FSMContext):
+    task = await get_task(message.from_user.id)  # Получаем список доступных заданий
 
-    if not tasks:
+    if not task:
         await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
         return
-
-    task = tasks[0]  # Берем первое доступное задание
 
     text = (
         f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
         f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
         f"•<b> Награда: {task.reward}⭐</b>"
     )
+    await state.update_data(task = task)
 
-    await message.answer(text, parse_mode="HTML", disable_web_page_preview=True)
 
+    await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=kb.complete_inline)
+
+
+@user.callback_query(F.data == 'complete_task')
+async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext):
+    data = await state.get_data()
+    task_present = data.get("task")
+    await state.clear()
+    link = task_present.link
+    is_subscribed  = await is_user_subscribed(bot,callback.from_user.id,link)
+    if is_subscribed :
+        await completed_task(task_present.id, callback.from_user.id, task_present.reward)
+        await callback.answer('⭐Вознаграждения зачислено')
+
+        task = await get_task(callback.from_user.id)  # Получаем список доступных заданий
+        await state.update_data(task = task)
+
+        if not task:
+            await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+            return
+
+
+
+        text = (
+            f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
+            f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
+            f"•<b> Награда: {task.reward}⭐</b>"
+        )
+
+        await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=kb.complete_inline)
+    else:
+        await callback.answer("❌ Вы не подписаны на канал! Подпишитесь и попробуйте снова.", show_alert=True)
 
 @user.message(F.text == '💎Бонус')
 async def bonus(message: Message):
@@ -138,11 +165,7 @@ async def withdraw(message:Message):
 
 
 @user.callback_query(lambda c: c.data and c.data.startswith("withdraw_"))
-<<<<<<< HEAD
-async def handle_withdraw_callback(callback: CallbackQuery):
-=======
 async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
->>>>>>> 0845efb (Первый коммит)
     value = int(callback.data.removeprefix("withdraw_")) 
     user = await get_user(callback.from_user.id)
     if user.balance >= value:  
@@ -153,10 +176,6 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
     "*Следить за статусом своей заявки можно в нашем чате выводов в реальном времени:* [https://t.me/stoutput](https://t.me/stoutput)\n\n"
     "_Не меняйте @username, иначе мы не сможем отправить подарок, а заявка будет отклонена!_"
 )
-<<<<<<< HEAD
-        await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
-        await callback.message.delete()
-=======
         message_text = (
         f"📢 Новая заявка на вывод!\n\n"
         f"👤 Пользователь: {user.username or 'Не указан'}\n"
@@ -170,13 +189,10 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
         await callback.message.delete()
         for admin_id in ADMIN:
             await bot.send_message(admin_id, message_text)
->>>>>>> 0845efb (Первый коммит)
     else:
         await callback.answer('Не хватает',show_alert=True)
 
 
-<<<<<<< HEAD
-=======
 async def notify_admin_new_withdrawal(bot:Bot, tg_id: int, username: str, amount: int):
     """Отправляет уведомление админу о новой заявке на вывод."""
     message_text = (
@@ -193,20 +209,9 @@ async def notify_admin_new_withdrawal(bot:Bot, tg_id: int, username: str, amount
         print(f"Ошибка при отправке уведомления админу: {e}")
 
 
->>>>>>> 0845efb (Первый коммит)
 @user.callback_query(F.data == 'void')
 async def fail_callback(callback: CallbackQuery):
     await callback.answer("❌ Неверно!")
     await callback.message.delete()
 
 
-<<<<<<< HEAD
-
-
-@user.message(F.text == 'test')
-async def get_username(message: Message,bot: Bot):
-    user = await message.bot.get_chat(message.from_user.id)
-    username = user.username if user.username else "У вас нет username"
-    await message.answer(f"Ваш username: @{username}")
-=======
->>>>>>> 0845efb (Первый коммит)

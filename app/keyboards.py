@@ -40,6 +40,9 @@ withdraw_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(te
                                                            InlineKeyboardButton(text = '350⭐️',callback_data='350')],
                                                            [InlineKeyboardButton(text = '500⭐️',callback_data='500')]])
 
+complete_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✅Выполнил', callback_data='complete_task')]])
+
+
 """async def withdraw_inline():
     # Значения по умолчанию
     default_values = [15, 25, 50, 100, 150, 350, 500]
@@ -105,9 +108,5 @@ async def withdraw_edit_req():
 
 edit_bonus = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить',callback_data='editbonus')]])
 
-<<<<<<< HEAD
-stat_edit = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Сортировать по дате',callback_data='num_date')]])
-=======
 stat_edit = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Сортировать по дате',callback_data='num_date')]])
 
->>>>>>> 0845efb (Первый коммит)

@@ -1,14 +1,13 @@
 from app.database.models import async_session
-<<<<<<< HEAD
-from app.database.models import User, Config, Task, TaskCompletion
-=======
 from app.database.models import User, Config, Task, TaskCompletion, Transaction
->>>>>>> 0845efb (Первый коммит)
 from sqlalchemy import select, update, delete, desc
 from decimal import Decimal
 from datetime import datetime
 import text as txt
 from sqlalchemy import and_
+from aiogram import Bot
+from aiogram.types import ChatMember
+from aiogram.exceptions import TelegramBadRequest
 
 
 def connection(func):
@@ -76,7 +75,7 @@ async def check_tasks(session, tg_id):
 
 @connection
 async def get_all_tasks(session):
-    result = await session.execute(select(Task))
+    result = await session.execute(select(Task).where(Task.is_active == True))
     return result.scalars().all()
 
 
@@ -237,9 +236,6 @@ async def get_all_users_date(session, date_1, date_2):
     
     result = await session.execute(query)
     users = result.scalars().all()
-<<<<<<< HEAD
-    return users
-=======
     return users
 
 
@@ -269,4 +265,80 @@ async def complete_transaction(session, id):
     if transaction:
         transaction.completed = True
         await session.commit()
->>>>>>> 0845efb (Первый коммит)
+
+
+@connection
+async def find_active_task_from(session, start_id: int):
+    # Проверяем сразу указанную id
+    result = await session.execute(
+        select(Task).where(Task.id == start_id, Task.is_active == True)
+    )
+    task = result.scalars().first()
+    
+    if task:
+        return task  # Если задание активно, возвращаем его
+    
+    # Если задание не активно, продолжаем искать дальше
+    current_id = start_id + 1
+    while True:
+        result = await session.execute(
+            select(Task).where(Task.id == current_id, Task.is_active == True)
+        )
+        task = result.scalars().first()
+        
+        if task:
+            return task  # Возвращаем найденное активное задание
+        
+        current_id += 1  # Увеличиваем id и продолжаем поиск
+
+
+@connection
+async def get_task(session,tg_id):
+    task_count = await session.scalar(select(User.task_count).where(User.tg_id == tg_id))
+    task = await find_active_task_from(task_count)
+
+    result = await session.scalar(select(Task).where(Task.id == task.id))
+    return result
+
+
+async def is_user_subscribed(bot: Bot, user_id: int, channel_link: str) -> bool:
+    try:
+        print(f"\nПроверка подписки пользователя {user_id} на канал {channel_link}")
+        
+        # Извлекаем имя канала из ссылки
+        channel_username = channel_link.split("t.me/")[-1].strip("/")
+        print(f"Имя канала: {channel_username}")
+        
+        # Получаем информацию о чате
+        chat = await bot.get_chat(f'@{channel_username}')
+        chat_id = chat.id
+        print(f"ID чата: {chat_id}")
+        
+        # Проверяем статус пользователя в чате
+        member: ChatMember = await bot.get_chat_member(chat_id=chat_id, user_id=user_id)
+        print(f"Статус пользователя: {member.status}")
+        
+        is_subscribed = member.status in ["member", "administrator", "creator"]
+        print(f"Пользователь подписан: {is_subscribed}")
+        
+        return is_subscribed
+        
+    except TelegramBadRequest as e:
+        print(f"Ошибка при проверке подписки: {e}")
+        return False
+    
+
+@connection
+async def completed_task (session,task_id, tg_id, amount):
+    user = await session.scalar(select(User).where(User.tg_id == tg_id))
+    task = await session.scalar(select(Task).where(Task.id == task_id))
+
+    if task and user:
+        user.balance += amount
+        user.task_count += 1
+        task.total_completions -=1
+        task.completed_count +=1
+        if task.total_completions == 0:
+            task.is_active = False
+
+        await session.commit()
