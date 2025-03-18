@@ -449,4 +449,10 @@ async def create_task_completions(session,tg_id, task_id):
     await session.commit()
 
 
-
+@connection
+async def check_user(session, user_id):
+    user = await session.scalar(select(User).where(User.tg_id == user_id))
+    if user:
+        return True
+    else: 
+        return False

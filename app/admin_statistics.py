@@ -22,10 +22,6 @@ async def statistics_handler(message: Message, state: FSMContext):
     users = await get_today_users()
     all_users = await get_all_users()
     
-    if not users:
-        await message.answer("Сегодня пока что никто не зарегистрировался.")
-        return
-
     total_users = len(users)
     total_all_users = len(all_users)
     

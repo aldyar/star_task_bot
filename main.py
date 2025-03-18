@@ -11,8 +11,6 @@ from app.database.models import async_main
 from app.database.requests import create_config,check_subscriptions
 from app.middleware import SubscriptionMiddleware  # Импорт мидлвара
 
- # Ссылка на обязательный канал
-
 async def main():
     bot = Bot(token=TOKEN)
     dp = Dispatcher()

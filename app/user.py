@@ -5,7 +5,8 @@ from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
                                    get_withdraw_limit, set_referrer_id, create_transaction, get_task,
-                                   is_user_subscribed,completed_task,create_task_completions,check_subscriptions)
+                                   is_user_subscribed,completed_task,create_task_completions,check_subscriptions,
+                                   check_user)
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
@@ -30,7 +31,7 @@ async def cmd_start(message: Message, state: FSMContext):
         await state.update_data(referrer_id=referrer_id)
     emoji, captcha = random.choice(kb.captchas)  # Выбираем случайную капчу
     text = ("🤖 <b>Капча</b>\n\n"
-        "1️⃣ Подпишись на <a href='https://t.me/testtt1143'>канал</a>\n\n"
+        "1️⃣ Подпишись на <a href='https://t.me/FreeStard'>канал</a>\n\n"
         f"2️⃣ Нажми на {emoji} ниже, чтобы начать пользоваться ботом и получать звёзды, "
         "после прохождения начислим тебе 1⭐ на баланс бота:")
     await message.answer(text, reply_markup=captcha, parse_mode="HTML", disable_web_page_preview=True)
@@ -230,6 +231,5 @@ async def fail_callback(callback: CallbackQuery):
 
 @user.message(F.text == 'test')
 async def test_handler(message:Message,bot: Bot):
-    await message.answer("FUNC START")
-    await check_subscriptions(bot)
-    await message.answer("FUNC WORK")
+    check = await check_user(message.from_user.id)
+    print(f'VASH STATUS: {check}')

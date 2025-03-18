@@ -3,7 +3,7 @@ from aiogram import BaseMiddleware, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.dispatcher.event.bases import TelegramObject
 from aiogram.exceptions import TelegramBadRequest
-
+from app.database.requests import check_user
 
 class SubscriptionMiddleware(BaseMiddleware):
     def __init__(self, bot: Bot, channel_link: str):
@@ -31,7 +31,10 @@ class SubscriptionMiddleware(BaseMiddleware):
     ) -> Any:
         user_id = event.from_user.id if isinstance(event, (Message, CallbackQuery)) else None
         if user_id:
-            if not await self.is_user_subscribed(user_id):
+            check = await check_user(user_id)
+            if check is False:
+                return await handler(event, data)
+            elif not await self.is_user_subscribed(user_id):
                 if isinstance(event, Message):
                     await event.answer(
                         f"❌ Вы не подписаны на канал! Подпишитесь, чтобы продолжить: {self.channel_link}",
