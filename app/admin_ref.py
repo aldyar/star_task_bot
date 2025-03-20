@@ -18,7 +18,8 @@ class Admin(Filter):
     
 
 @admin.message(Admin(),F.text == 'Реферальная система')
-async def referal_system(message: Message):
+async def referal_system(message: Message,state:FSMContext):
+    await state.clear()
     text = await get_config('ref_text')
     reward = await get_config('ref_reward')
 

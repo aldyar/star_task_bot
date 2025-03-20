@@ -243,15 +243,29 @@ async def get_all_users_date(session, date_1, date_2):
 async def create_transaction(session,tg_id, amount):
     user = await session.scalar(select(User).where(User.tg_id == tg_id))
 
-    new_transtaction = Transaction(
+    new_transaction = Transaction(
         tg_id = tg_id,
         username=user.username if user.username else None,
         amount = amount
     )
     user.balance -= amount
 
-    session.add(new_transtaction)
+    session.add(new_transaction)
     await session.commit()
+    await session.refresh(new_transaction)  # Привязываем объект к сессии перед возвратом
+    return new_transaction  # Теперь можно возвращать весь объект
+
+@connection
+async def insert_message_id(session,id , message_id):
+    transaction = await session.scalar(select(Transaction).where(Transaction.id == id))
+    if transaction:
+        transaction.message_id = message_id
+        await session.commit()
+
+@connection
+async def get_transaction(session,id):
+    transaction = await session.scalar(select(Transaction).where(Transaction.id == id))
+    return transaction
 
 @connection
 async def get_pending_transactions(session):
@@ -265,6 +279,8 @@ async def complete_transaction(session, id):
     if transaction:
         transaction.completed = True
         await session.commit()
+        return True
+    return False
 
 
 @connection

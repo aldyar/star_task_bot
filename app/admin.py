@@ -20,12 +20,14 @@ class Admin(Filter):
     
 
 @admin.message(Admin(), CommandStart())
-async def start_admin(message: Message):
+async def start_admin(message: Message,state:FSMContext):
+    await state.clear()
     await message.answer('Добро пожаловать в панель Администратора.',reply_markup = kb.main_admin)
 
 
 @admin.message(Admin(),F.text == 'Задание')
-async def tasks (message: Message):
+async def tasks (message: Message,state:FSMContext):
+    await state.clear()
     text = """
 📋 *Панель Администратора* 
 Добро пожаловать! Здесь вы можете управлять заданиями.  
@@ -48,10 +50,6 @@ async def create_task_handler(callback: CallbackQuery, state: FSMContext):
 @admin.message(CreateTask.waiting_for_link)
 async def process_link(message: Message, state: FSMContext):
     link = message.text.strip()
-    if not re.match(r'^https:\/\/t\.me\/[A-Za-z0-9_]+$', link):
-        await message.answer("❌ Неверный формат ссылки! Введите ссылку, которая начинается с `https://t.me/...`")
-        return
-
     await state.update_data(link=link)
     await message.answer("💰 Введите вознаграждение за выполнение (в цифрах):")
     await state.set_state(CreateTask.waiting_for_reward)

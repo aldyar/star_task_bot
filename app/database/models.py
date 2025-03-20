@@ -75,6 +75,7 @@ class Transaction(Base):
     amount: Mapped[int] = mapped_column(Integer)
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     created: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
+    message_id:Mapped[int] = mapped_column(Integer,nullable=True)
 
     
 async def async_main():

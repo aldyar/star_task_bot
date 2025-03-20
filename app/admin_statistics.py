@@ -19,6 +19,7 @@ class Admin(Filter):
 
 @admin.message(Admin(),F.text == 'Статистика')
 async def statistics_handler(message: Message, state: FSMContext):
+    await state.clear()
     users = await get_today_users()
     all_users = await get_all_users()
     

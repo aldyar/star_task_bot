@@ -4,9 +4,10 @@ from aiogram.filters import Filter, Command, CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.states import EditLimit
-from app.database.requests import edit_withdraw_limit, get_pending_transactions, complete_transaction
+from app.database.requests import edit_withdraw_limit, get_pending_transactions, complete_transaction, get_transaction
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import ADMIN
+from config import ADMIN, GROUP_ID
+from aiogram import Bot
 
 admin = Router()
 
@@ -17,7 +18,8 @@ class Admin(Filter):
     
 
 @admin.message(Admin(), F.text == 'Вывод средств')
-async def withdraw_hander(message: Message):
+async def withdraw_hander(message: Message,state:FSMContext):
+    await state.clear()
     text = ('*В этой панели вы можете изменить суммы вывода ⭐️ или посмотреть заявки на вывод*')
     await message.answer(text, parse_mode='Markdown', reply_markup=kb.withdraw_menu_admin)
 
@@ -98,7 +100,7 @@ async def withdraw_req_handler(callback: CallbackQuery):
             f"📌 *Заявка №{withdrawal.id}*\n"
             f"👤 *Пользователь:* `{withdrawal.username or 'Не указан'}`\n"
             f"🆔 *TG ID:* `{withdrawal.tg_id}`\n"
-            f"💰 *Сумма:* `{withdrawal.amount} ₽`\n"
+            f"💰 *Сумма:* `{withdrawal.amount} ⭐️`\n"
             f"⏳ *Статус:* _Ожидает выполнения_"
         )
 
@@ -108,13 +110,19 @@ async def withdraw_req_handler(callback: CallbackQuery):
 
 
 @admin.callback_query(Admin(), F.data.startswith("complete_withdraw_"))
-async def complete_withdraw(callback: CallbackQuery):
+async def complete_withdraw(callback: CallbackQuery, bot: Bot):
     """Обрабатывает нажатие на кнопку выполнения заявки."""
     withdraw_id = int(callback.data.split("_")[-1])  # Получаем ID заявки
-
+    print(f'VASH IIIIIID:{withdraw_id}')
     success = await complete_transaction(withdraw_id)  # Отмечаем заявку выполненной в БД
-
+    transaction = await get_transaction(withdraw_id)
     if success:
+        await bot.send_message(
+            GROUP_ID,
+            f"*✅ #Заявка_{transaction.id} выполнена, отправили подарок за 25⭐️.*\n\n"
+            '*Создать заявку: @FreeStard_bot*',
+            reply_to_message_id=transaction.message_id, parse_mode='Markdown'
+        )
         updated_text = callback.message.text.replace("_Ожидает выполнения_", "*✅ Выполнено*")
         await callback.message.edit_text(updated_text, parse_mode="Markdown")
         await callback.answer("Заявка успешно выполнена! ✅")

@@ -6,7 +6,7 @@ import app.keyboards as kb
 from app.database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
                                    get_withdraw_limit, set_referrer_id, create_transaction, get_task,
                                    is_user_subscribed,completed_task,create_task_completions,check_subscriptions,
-                                   check_user)
+                                   check_user,insert_message_id)
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
@@ -14,7 +14,7 @@ import random
 from datetime import datetime, timedelta
 import text as txt
 user = Router()
-from config import ADMIN
+from config import ADMIN, GROUP_ID
 from app.admin import start_admin
 import uuid
 
@@ -100,6 +100,7 @@ async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext)
     else:
         await callback.answer("❌ Вы не подписаны на канал! Подпишитесь и попробуйте снова.", show_alert=True)
 
+
 @user.message(F.text == '💎Бонус')
 async def bonus(message: Message):
     bonus = await get_config('bonus_amount')
@@ -123,6 +124,7 @@ async def bonus(message: Message):
         )
     await message.answer(text,parse_mode='Markdown')
 
+
 @user.callback_query(F.data == 'accsess')
 async def success_callback(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
@@ -132,7 +134,17 @@ async def success_callback(callback: CallbackQuery, state: FSMContext):
     user = await callback.bot.get_chat(callback.from_user.id)
     username = user.username 
     await set_user(callback.from_user.id, username, referrer_id)
-    start = await get_config('start_text')
+    start =   (
+        "👋 *Добро пожаловать!*\n"
+        "В нашем боте можно бесплатно зарабатывать звёзды, мы вывели уже более *250 тысяч звёзд*, посмотри –\n"
+        "[🔗 https://t.me/FreeStard](https://t.me/FreeStard)\n\n"
+        "🎁 *За регистрацию в боте, дарим тебе первую* `1⭐`, *получай больше звёзд этими способами:*\n"
+        "• 🎯 *Выполняй задания*\n"
+        "• 💎 *Забирай ежедневный бонус*\n"
+        "• 👥 *Приглашай друзей по ссылке и получай по* `2⭐` *за каждого, просто отправь её другу:*\n"
+        f"[🔗 https://t.me/FreeStard_bot?start={callback.from_user.id}](https://t.me/FreeStard_bot?start={callback.from_user.id})\n\n"
+        "*Как только заработаешь минимум* `15⭐`, *выводи их в разделе* «💰 *Вывести звёзды*», *мы отправим тебе подарок за выбранное количество звёзд, удачи!*\n\n"
+        )
     await callback.message.answer(start,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
     await callback.message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
 
@@ -202,7 +214,7 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
     f"*⏳ Заявка на вывод {value}⭐ создана!*\n\n"
     "*В течение 72 часов заявка будет рассмотрена администраторами и вам будет отправлен подарок,* "
     "*из которого вы получите звёзды.*\n\n"
-    "*Следить за статусом своей заявки можно в нашем чате выводов в реальном времени:* [https://t.me/stoutput](https://t.me/stoutput)\n\n"
+    "*Следить за статусом своей заявки можно в нашем чате выводов в реальном времени:* [https://t.me/vyvod_star](https://t.me/vyvod_star)\n\n"
     "_Не меняйте @username, иначе мы не сможем отправить подарок, а заявка будет отклонена!_"
 )
         message_text = (
@@ -213,9 +225,23 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
         f"⚡ Проверьте и обработайте запрос."
     )
 
-        await create_transaction(callback.from_user.id, value)
+        transaction = await create_transaction(callback.from_user.id, value)
+
+        # Сообщение для группы
+        group_message = (
+            f"*⏳ Новая заявка №{transaction.id} на получение подарка за {value}⭐* "
+            f"*от пользователя [{user.username}](http://t.me/{user.username})*"
+        )
+
         await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
         await callback.message.delete()
+
+        # Отправка сообщения в группу
+        #GROUP_ID = -1002430935554  # Заменить на ID твоей группы
+        send_message = await bot.send_message(GROUP_ID, group_message, parse_mode='Markdown', disable_web_page_preview=True)
+        await insert_message_id(transaction.id,send_message.message_id)
+
+
         for admin_id in ADMIN:
             await bot.send_message(admin_id, message_text)
     else:
@@ -231,5 +257,6 @@ async def fail_callback(callback: CallbackQuery):
 
 @user.message(F.text == 'test')
 async def test_handler(message:Message,bot: Bot):
-    check = await check_user(message.from_user.id)
-    print(f'VASH STATUS: {check}')
+    chat = await bot.get_chat("@vyvod_star")
+    print(f"Group ID: {chat.id}")
+

@@ -17,7 +17,8 @@ class Admin(Filter):
     
 
 @admin.message(Admin(), F.text == 'Бонус')
-async def edit_bonus_handler(message: Message):
+async def edit_bonus_handler(message: Message,state:FSMContext):
+    await state.clear()
     bonus = await get_config('bonus_amount')
     await message.answer(f'*Сумма ежедевного бонуса*: {bonus}', parse_mode='Markdown',reply_markup=kb.edit_bonus)
 
