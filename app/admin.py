@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.states import CreateTask, EditTask
 import re
-from app.database.requests import get_all_tasks, get_task, edit_task_reward, edit_task_active, edit_task_total_completion, create_task
+from app.database.requests import get_all_tasks, get_task, edit_task_reward, edit_task_active, edit_task_total_completion, create_task,get_task_about_taskid
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMarkup, InlineKeyboardButton
 from app.database.models import User, Config, Task, TaskCompletion
 from app.database.models import async_session
@@ -76,21 +76,35 @@ async def process_count(message: Message, state: FSMContext):
 
 
     await state.update_data(count=int(message.text))
-    data = await state.get_data()
-    link = data['link'] 
-    reward = data['reward']
-    count = data['count']
-    print(f'link: {link}, reward: {reward}, count: {count}')
-    await create_task(link, reward, count)
+    await message.answer('📨 Перешлите любое сообщение из данной канала:')
+    await state.set_state(CreateTask.waiting_fot_chat_id)
+    
 
-    text = f"""
-✅ *Задание успешно создано!*
-📌 *Ссылка:* [{link}]({link})
-💰 *Вознаграждение:* {reward}
-📊 *Количество выполнений:* {count}
-"""
-    await message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
-    await state.clear()
+@admin.message(CreateTask.waiting_fot_chat_id)
+async def process_chat_id(message: Message, state: FSMContext):
+    if message.forward_from_chat:  # Проверяем, что сообщение переслано из чата или канала
+        chat_id = message.forward_from_chat.id
+        await message.answer(f"Chat ID успешно получен: `{chat_id}`", parse_mode="Markdown")
+        data = await state.get_data()
+        link = data['link'] 
+        reward = data['reward']
+        count = data['count']
+        print(f'link: {link}, reward: {reward}, count: {count}')
+        await create_task(link, reward, count,chat_id)
+
+        text = f"""
+    ✅ *Задание успешно создано!*
+    📌 *Ссылка:* [{link}]({link})
+    💰 *Вознаграждение:* {reward}
+    📊 *Количество выполнений:* {count}
+    ✉️ *ID канала:* {chat_id}
+    """
+        await message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
+        await state.clear()
+        
+    else:
+        await message.answer("Пожалуйста, перешли сообщение из канала.")
+
 
 
 @admin.callback_query(F.data == 'edit_task')
@@ -110,7 +124,7 @@ async def show_tasks(callback: CallbackQuery):
 """
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text='✏️ Редактировать', callback_data=f'edit_{task.id}')]
+                [InlineKeyboardButton(text='✏️ Редактировать', callback_data=f'editindividualtask_{task.id}')]
             ]
         )
         await callback.message.answer(text, parse_mode='Markdown', reply_markup=keyboard, disable_web_page_preview=True)
@@ -118,10 +132,10 @@ async def show_tasks(callback: CallbackQuery):
 
 
 
-@admin.callback_query(F.data.startswith('edit_'))
+@admin.callback_query(F.data.startswith('editindividualtask_'))
 async def edit_task(callback:CallbackQuery, state: FSMContext):
     task_id = int(callback.data.split('_')[1])
-    task = await get_task(task_id)
+    task = await get_task_about_taskid(task_id)
 
     if not task:
         await callback.message.answer("❌ Задание не найдено.")
@@ -141,8 +155,7 @@ async def edit_task(callback:CallbackQuery, state: FSMContext):
         inline_keyboard=[
             [InlineKeyboardButton(text='💰 Изменить вознаграждение', callback_data=f'change_reward_{task_id}')],
             [InlineKeyboardButton(text='➕ Добавить выполнений', callback_data=f'add_completions_{task_id}')],
-            [InlineKeyboardButton(text='🚫 Деактивировать задание', callback_data=f'deactivate_{task_id}')],
-            [InlineKeyboardButton(text='❌ Отмена', callback_data='cancel_edit')]
+            [InlineKeyboardButton(text='🚫 Деактивировать задание', callback_data=f'deactivate_{task_id}')]
         ]
     )
 
@@ -167,7 +180,7 @@ async def process_change_reward(message: Message, state: FSMContext):
 
     data = await state.get_data()
     task_id = data['task_id']
-    task = await get_task(task_id)
+    task = await get_task_about_taskid(task_id)
 
     if task:
         await edit_task_reward(task_id, int(message.text))
@@ -195,7 +208,7 @@ async def process_add_completions(message: Message, state: FSMContext, ):
 
     data = await state.get_data()
     task_id = data['task_id']
-    task = await get_task(task_id)
+    task = await get_task_about_taskid(task_id)
 
     if task:
         await edit_task_total_completion(task_id, int(message.text))
@@ -209,7 +222,7 @@ async def process_add_completions(message: Message, state: FSMContext, ):
 @admin.callback_query(F.data.startswith('deactivate_'))
 async def deactivate_task(callback: CallbackQuery):
     task_id = int(callback.data.split('_')[-1])
-    task = await get_task(task_id)
+    task = await get_task_about_taskid(task_id)
 
     if task:
         await edit_task_active(task_id)

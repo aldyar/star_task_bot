@@ -68,8 +68,8 @@ async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext)
     task_present = data.get("task")
     await state.clear()
     
-    link = task_present.link
-    is_subscribed  = await is_user_subscribed(bot,callback.from_user.id,link)
+    chat_id = task_present.chat_id
+    is_subscribed  = await is_user_subscribed(bot,callback.from_user.id,chat_id)
     if is_subscribed :
         copmpleted = await completed_task(task_present.id, callback.from_user.id, task_present.reward)
         if copmpleted:
@@ -255,8 +255,47 @@ async def fail_callback(callback: CallbackQuery):
     await callback.message.delete()
 
 
-@user.message(F.text == 'test')
+@user.message(F.text == 'test_chat')
 async def test_handler(message:Message,bot: Bot):
     chat = await bot.get_chat("@vyvod_star")
     print(f"Group ID: {chat.id}")
 
+@user.message(F.text == ("test"))
+async def check_admin_handler(message: Message, bot: Bot):
+    chat_id = -1001751157582  # ID канала, на который проверяем подписку
+    user_id = message.from_user.id
+    is_subscribed = await is_user_subscribed(chat_id, user_id, bot)
+    if is_subscribed:
+        print("Пользователь подписан на канал.")
+    else:
+        print("Пользователь НЕ подписан на канал.")
+
+from aiogram import Bot
+from aiogram.types import ChatMember
+from aiogram.exceptions import TelegramBadRequest
+async def is_user_subscribed_handler(chat_id: int, user_id: int,bot:Bot) -> bool:
+    try:
+        member: ChatMember = await bot.get_chat_member(chat_id=chat_id, user_id=user_id)
+        print(f"Статус пользователя: {member.status}")
+        # Проверяем статус пользователя
+        return member.status in ['member', 'administrator', 'creator']
+    except TelegramBadRequest:
+        # Если возникла ошибка, значит пользователь не подписан
+        return False
+    
+    
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import Message, ContentType
+
+@user.message(F.content_type.in_({"text", "photo", "video", "document", "audio", "voice", "sticker", "animation", "location", "contact", "venue", "dice", "poll", "game", "invoice", "successful_payment", "passport_data"}))
+async def handle_message(message: Message):
+    if message.forward_from_chat:  # Проверяем, что сообщение переслано из канала
+        channel_id = message.forward_from_chat.id  # Извлекаем ID канала
+        channel_title = message.forward_from_chat.title  # Название канала (если есть)
+        
+        response = f"ID канала: {channel_id}\n"
+        response += f"Название канала: {channel_title}"
+        
+        await message.reply(response)
+    else:
+        await message.reply("Сообщение не переслано из канала.")

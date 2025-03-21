@@ -54,6 +54,7 @@ class Task(Base):
     total_completions: Mapped[int] = mapped_column(Integer, nullable=False)  # Заданный лимит выполнений
     completed_count: Mapped[int] = mapped_column(Integer, default=0)  # Сколько раз уже выполнили
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)  # Активно ли задание
+    chat_id: Mapped[int] = mapped_column(Integer,nullable=True)
 
 
 class TaskCompletion(Base):

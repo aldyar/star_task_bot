@@ -5,6 +5,7 @@ class CreateTask(StatesGroup):
     waiting_for_link = State()
     waiting_for_reward = State()
     waiting_for_count = State()
+    waiting_fot_chat_id = State()
 
 
 class EditTask(StatesGroup):

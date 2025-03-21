@@ -172,11 +172,12 @@ async def edit_ref_reward(session, reward):
         await session.commit()
 
 @connection 
-async def create_task(session, link, reward, total_completions):
+async def create_task(session, link, reward, total_completions,chat_id):
     new_task = Task(
         link=link,
         reward=reward,
-        total_completions=total_completions
+        total_completions=total_completions,
+        chat_id = chat_id
     )   
     session.add(new_task)
     await session.commit()
@@ -316,6 +317,12 @@ async def find_active_task_from(session, start_id: int):
 
 
 @connection
+async def get_task_about_taskid(session,task_id):
+    task = await session.scalar(select(Task).where(Task.id == task_id))
+    return task
+
+
+@connection
 async def get_task(session, tg_id: int):
     task_count = await session.scalar(select(User.task_count).where(User.tg_id == tg_id))
     
@@ -327,9 +334,9 @@ async def get_task(session, tg_id: int):
     return result
 
 
-async def is_user_subscribed(bot: Bot, user_id: int, channel_link: str) -> bool:
+async def is_user_subscribed(bot: Bot, user_id: int, chat_id) -> bool:
     try:
-        print(f"\nПроверка подписки пользователя {user_id} на канал {channel_link}")
+        """print(f"\nПроверка подписки пользователя {user_id} на канал {channel_link}")
         
         # Извлекаем имя канала из ссылки
         channel_username = channel_link.split("t.me/")[-1].strip("/")
@@ -338,7 +345,7 @@ async def is_user_subscribed(bot: Bot, user_id: int, channel_link: str) -> bool:
         # Получаем информацию о чате
         chat = await bot.get_chat(f'@{channel_username}')
         chat_id = chat.id
-        print(f"ID чата: {chat_id}")
+        print(f"ID чата: {chat_id}")"""
         
         # Проверяем статус пользователя в чате
         member: ChatMember = await bot.get_chat_member(chat_id=chat_id, user_id=user_id)
@@ -414,7 +421,7 @@ async def check_subscriptions(session, bot: Bot):
                 print(f"\nПроверка пользователя {user_id} на подписку на канал {task.link}")
 
                 try:
-                    is_subscribed = await is_user_subscribed(bot, user_id, task.link)
+                    is_subscribed = await is_user_subscribed(bot, user_id, task.chat_id)
                     print(f"Результат проверки подписки: {is_subscribed}")
                 except Exception as e:
                     print(f"Ошибка при проверке подписки пользователя {user_id}: {e}")
@@ -428,7 +435,7 @@ async def check_subscriptions(session, bot: Bot):
                             f"   *• С баланса в боте списано {task.reward}⭐*\n\n"
                             f"*Больше не отписывайтесь от каналов в заданиях, чтобы не получать штрафы!*"
                             )
-                    await bot.send_message(chat_id=user_id, text=text,parse_mode='Markdown')
+                    await bot.send_message(chat_id=user_id, text=text,parse_mode='Markdown', disable_web_page_preview=True)
 
                     if user:
                         user.balance -= task.reward
@@ -442,7 +449,7 @@ async def check_subscriptions(session, bot: Bot):
                             f"   *• На ваш баланс в боте добавлено {task.reward}⭐️*\n\n"
                             f"*Продолжайте оставаться подписанным, чтобы не терять свои баллы!*"
                             )
-                    await bot.send_message(chat_id=user_id, text=text, parse_mode='Markdown')
+                    await bot.send_message(chat_id=user_id, text=text, parse_mode='Markdown', disable_web_page_preview=True)
 
                     if user:
                         user.balance += task.reward
