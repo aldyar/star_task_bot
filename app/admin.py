@@ -117,10 +117,11 @@ async def show_tasks(callback: CallbackQuery):
 
     for task in tasks:
         text = f"""
-📌 **Ссылка:** [{task.link}]({task.link})
-💰 **Вознаграждение:** {task.reward}
-📊 **Лимит выполнений:** {task.total_completions}
-✅ **Выполнено:** {task.completed_count}
+🔢 *Задание №*{task.id}\n
+📌 *Ссылка:* [{task.link}]({task.link})
+💰 *Вознаграждение:* {task.reward}
+📊 *Лимит выполнений:* {task.total_completions}
+✅ *Выполнено:* {task.completed_count}
 """
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[

@@ -9,15 +9,15 @@ from app.admin_statistics import admin as admin_stat
 from app.user import user
 from app.database.models import async_main
 from app.database.requests import create_config,check_subscriptions
-from app.middleware import SubscriptionMiddleware  # Импорт мидлвара
+#from app.middleware import SubscriptionMiddleware  # Импорт мидлвара
 
 async def main():
     bot = Bot(token=TOKEN)
     dp = Dispatcher()
 
     # Регистрация мидлвара
-    dp.message.middleware(SubscriptionMiddleware(bot, CHANNEL_LINK))
-    dp.callback_query.middleware(SubscriptionMiddleware(bot, CHANNEL_LINK))
+    #dp.message.middleware(SubscriptionMiddleware(bot, CHANNEL_LINK))
+    #dp.callback_query.middleware(SubscriptionMiddleware(bot, CHANNEL_LINK))
 
     # Регистрация роутеров
     dp.include_routers(admin_router, admin_ref_router, admin_withdraw, admin_bonus, admin_stat, user)

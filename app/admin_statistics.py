@@ -40,13 +40,13 @@ async def statistics_handler(message: Message, state: FSMContext):
         referrer_id = user.referrer_id if user.referrer_id else "Нет"
         
         user_info = (
-            f"👤 Username: {username}\n"
+            f"👤 Username: `{username}`\n"
             f"🆔 Telegram ID: {user.tg_id}\n"
             f"📲 Referrer ID: {referrer_id}\n"
             f"📊 Приглашенных: {user.referral_count}"
         )
         
-        await message.answer(user_info)
+        await message.answer(user_info,parse_mode='Markdown')
 
 @admin.callback_query(Admin(), F.data == 'num_date')
 async def num_date_handler(callback: CallbackQuery, state: FSMContext):
@@ -59,6 +59,7 @@ async def num_date_handler(callback: CallbackQuery, state: FSMContext):
     
     await callback.message.answer(text, parse_mode='Markdown')
     await state.set_state(Date.first_date)
+    await callback.answer()
 
 
 @admin.message(Date.first_date)
@@ -96,13 +97,13 @@ async def process_second_date_handler(message:Message,state: FSMContext):
         referrer_id = user.referrer_id if user.referrer_id else "Нет"
         
         user_info = (
-            f"👤 Username: {username}\n"
+            f"👤 Username: `{username}`\n"
             f"🆔 Telegram ID: {user.tg_id}\n"
             f"📲 Referrer ID: {referrer_id}\n"
             f"📊 Приглашенных: {user.referral_count}"
         )
         
-        await message.answer(user_info)
+        await message.answer(user_info, parse_mode='Markdown')
     # Сбрасываем состояние после завершения
     await state.clear()
 

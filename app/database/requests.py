@@ -4,7 +4,7 @@ from sqlalchemy import select, update, delete, desc
 from decimal import Decimal
 from datetime import datetime
 import text as txt
-from sqlalchemy import and_
+from sqlalchemy import and_,func
 from aiogram import Bot
 from aiogram.types import ChatMember
 from aiogram.exceptions import TelegramBadRequest
@@ -294,7 +294,8 @@ async def find_active_task_from(session, start_id: int):
     
     if task:
         return task  # Если задание активно, возвращаем его
-    
+    elif not task:
+        return False
     # Если задание не активно, продолжаем искать дальше
     current_id = start_id + 1
     
@@ -325,7 +326,7 @@ async def get_task_about_taskid(session,task_id):
 @connection
 async def get_task(session, tg_id: int):
     task_count = await session.scalar(select(User.task_count).where(User.tg_id == tg_id))
-    
+
     task = await find_active_task_from(task_count)
     if not task:  # Если задание не найдено
         return None
@@ -399,7 +400,7 @@ async def check_subscriptions(session, bot: Bot):
         now = datetime.now()
         seven_days_ago = now - timedelta(days=7)
 
-        print(f"\n--- Проверка подписок начата. Время: {now} ---")
+        #print(f"\n--- Проверка подписок начата. Время: {now} ---")
 
         try:
             # Получаем все записи TaskCompletion
@@ -408,23 +409,23 @@ async def check_subscriptions(session, bot: Bot):
                 .where(TaskCompletion.completed >= seven_days_ago)
             )
             task_completions = task_completions.scalars().all()
-            print(f"Найдено записей для проверки: {len(task_completions)}")
+            #print(f"Найдено записей для проверки: {len(task_completions)}")
 
             for task_completion in task_completions:
                 user_id = task_completion.tg_id
                 task = await session.scalar(select(Task).where(Task.id == task_completion.task_id))
                 
                 if not task:
-                    print(f"Задание с ID {task_completion.task_id} не найдено.")
+                    #print(f"Задание с ID {task_completion.task_id} не найдено.")
                     continue
                 
-                print(f"\nПроверка пользователя {user_id} на подписку на канал {task.link}")
+                #print(f"\nПроверка пользователя {user_id} на подписку на канал {task.link}")
 
                 try:
                     is_subscribed = await is_user_subscribed(bot, user_id, task.chat_id)
-                    print(f"Результат проверки подписки: {is_subscribed}")
+                    #print(f"Результат проверки подписки: {is_subscribed}")
                 except Exception as e:
-                    print(f"Ошибка при проверке подписки пользователя {user_id}: {e}")
+                    #print(f"Ошибка при проверке подписки пользователя {user_id}: {e}")
                     continue
 
                 if not is_subscribed and task_completion.is_subscribed:
@@ -459,7 +460,7 @@ async def check_subscriptions(session, bot: Bot):
             print(f"Ошибка при выполнении запроса к БД: {e}")
 
         print(f"--- Проверка подписок завершена. Ожидание 24 часа. ---")
-        await asyncio.sleep(120)  # Проверяем каждые 24 часа (86400 секунд)
+        await asyncio.sleep(400)
 
 
 @connection
@@ -478,4 +479,43 @@ async def check_user(session, user_id):
     if user:
         return True
     else: 
+        return False
+    
+
+@connection
+async def count_reward(session, tg_id):
+    # Находим task_count пользователя по tg_id
+    task_count = await session.scalar(select(User.task_count).where(User.tg_id == tg_id))
+
+    if task_count is None:
+        return 0.0  # Если пользователь не найден, возвращаем 0
+
+    # Находим и суммируем все значения reward активных заданий
+    total_reward = await session.scalar(
+        select(func.sum(Task.reward))
+        .where(Task.is_active == True)
+    )
+
+    return total_reward if total_reward is not None else 0.0  # Возвращаем сумму активных заданий или 0
+
+
+@connection
+async def join_request(session,user_id,chat_id):
+    task = await session.scalar(select(Task).where(Task.chat_id == chat_id,Task.is_active == True))
+    if task:
+        await completed_task(task.id,user_id,task.reward)
+        return True
+    else:
+        return False
+    
+
+@connection
+async def skip_task(session, user_id, task_id):
+    user = await session.scalar(select(User).where(User.tg_id == user_id))
+    if user:
+        user.task_count += 1
+        task = await find_active_task_from(user.task_count)
+        await session.commit()
+        return task
+    else:
         return False

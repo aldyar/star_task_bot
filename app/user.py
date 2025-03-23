@@ -6,7 +6,7 @@ import app.keyboards as kb
 from app.database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
                                    get_withdraw_limit, set_referrer_id, create_transaction, get_task,
                                    is_user_subscribed,completed_task,create_task_completions,check_subscriptions,
-                                   check_user,insert_message_id)
+                                   check_user,insert_message_id, count_reward,join_request,skip_task)
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
@@ -14,7 +14,7 @@ import random
 from datetime import datetime, timedelta
 import text as txt
 user = Router()
-from config import ADMIN, GROUP_ID
+from config import ADMIN, GROUP_ID,CHANNEL_ID
 from app.admin import start_admin
 import uuid
 
@@ -38,9 +38,20 @@ async def cmd_start(message: Message, state: FSMContext):
 
 
 async def success_message(message: Message):
-    start = await get_config('start_text')
+    start =   (
+        "👋 *Добро пожаловать!*\n"
+        "В нашем боте можно бесплатно зарабатывать звёзды, мы вывели уже более *250 тысяч звёзд*, посмотри –\n"
+        "[🔗 https://t.me/FreeStard](https://t.me/FreeStard)\n\n"
+        "🎁 *За регистрацию в боте, дарим тебе первую* `1⭐`, *получай больше звёзд этими способами:*\n"
+        "• 🎯 *Выполняй задания*\n"
+        "• 💎 *Забирай ежедневный бонус*\n"
+        "• 👥 *Приглашай друзей по ссылке и получай по* `2⭐` *за каждого, просто отправь её другу:*\n"
+        f"[🔗 https://t.me/FreeStard_bot?start={message.from_user.id}](https://t.me/FreeStard_bot?start={message.from_user.id})\n\n"
+        "*Как только заработаешь минимум* `15⭐`, *выводи их в разделе* «💰 *Вывести звёзды*», *мы отправим тебе подарок за выбранное количество звёзд, удачи!*\n\n"
+        )
     await message.answer(start,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
     await message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
+
 
 
 @user.message(F.text == '🎯Задания')
@@ -57,21 +68,48 @@ async def get_task_hander(message: Message,state: FSMContext):
         f"•<b> Награда: {task.reward}⭐</b>"
     )
     await state.update_data(task = task)
+    reward = await count_reward(message.from_user.id)
+    await message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+                         '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
+    keyboard = await kb.complete_task_inline(task.link)
+    await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
 
 
-    await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=kb.complete_inline)
+
+@user.callback_query(F.data == 'skip')
+async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
+    await callback.message.delete()
+    data = await state.get_data()
+    task_present = data.get("task")
+    task = await skip_task(callback.from_user.id,task_present.id)
+    if task:
+        text = (
+        f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
+        f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
+        f"•<b> Награда: {task.reward}⭐</b>"
+    )
+        keyboard = await kb.complete_task_inline(task.link)
+        await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+    else:
+        await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+
 
 
 @user.callback_query(F.data == 'complete_task')
 async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext):
     data = await state.get_data()
     task_present = data.get("task")
-    await state.clear()
+    #await state.clear()
     
     chat_id = task_present.chat_id
     is_subscribed  = await is_user_subscribed(bot,callback.from_user.id,chat_id)
     if is_subscribed :
         copmpleted = await completed_task(task_present.id, callback.from_user.id, task_present.reward)
+        complete_text = (
+                f'*✅ Задание №{task_present.id} выполнено!*\n\n'
+                f'*• {task_present.reward}⭐️ начислено на ваш баланс в боте, не отписывайтесь от канала в течении 7 дней, иначе звёзды будут обнулены!!*'
+                )
+        await callback.message.answer(complete_text,parse_mode='Markdown')
         if copmpleted:
             message_text = (f'🎯*Задание под номером  №*{task_present.id} *завершило работу*\n\n'
                             f'• *Ссылка на задание:* [{task_present.link}]({task_present.link})\n'
@@ -95,10 +133,14 @@ async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext)
             f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
             f"•<b> Награда: {task.reward}⭐</b>"
         )
-
-        await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=kb.complete_inline)
+        keyboard = await kb.complete_task_inline(task.link)
+        await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
     else:
         await callback.answer("❌ Вы не подписаны на канал! Подпишитесь и попробуйте снова.", show_alert=True)
+        await callback.answer()
+
+
+
 
 
 @user.message(F.text == '💎Бонус')
@@ -126,28 +168,31 @@ async def bonus(message: Message):
 
 
 @user.callback_query(F.data == 'accsess')
-async def success_callback(callback: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    referrer_id = data.get("referrer_id")
-    await callback.answer("✅ Верно! Доступ разрешен.")
-    await callback.message.delete()
-    user = await callback.bot.get_chat(callback.from_user.id)
-    username = user.username 
-    await set_user(callback.from_user.id, username, referrer_id)
-    start =   (
-        "👋 *Добро пожаловать!*\n"
-        "В нашем боте можно бесплатно зарабатывать звёзды, мы вывели уже более *250 тысяч звёзд*, посмотри –\n"
-        "[🔗 https://t.me/FreeStard](https://t.me/FreeStard)\n\n"
-        "🎁 *За регистрацию в боте, дарим тебе первую* `1⭐`, *получай больше звёзд этими способами:*\n"
-        "• 🎯 *Выполняй задания*\n"
-        "• 💎 *Забирай ежедневный бонус*\n"
-        "• 👥 *Приглашай друзей по ссылке и получай по* `2⭐` *за каждого, просто отправь её другу:*\n"
-        f"[🔗 https://t.me/FreeStard_bot?start={callback.from_user.id}](https://t.me/FreeStard_bot?start={callback.from_user.id})\n\n"
-        "*Как только заработаешь минимум* `15⭐`, *выводи их в разделе* «💰 *Вывести звёзды*», *мы отправим тебе подарок за выбранное количество звёзд, удачи!*\n\n"
-        )
-    await callback.message.answer(start,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
-    await callback.message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
-
+async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    subscribed = await is_user_subscribed(bot,callback.from_user.id,CHANNEL_ID)
+    if subscribed:
+        data = await state.get_data()
+        referrer_id = data.get("referrer_id")
+        await callback.answer("✅ Верно! Доступ разрешен.")
+        await callback.message.delete()
+        user = await callback.bot.get_chat(callback.from_user.id)
+        username = user.username 
+        await set_user(callback.from_user.id, username, referrer_id)
+        start =   (
+            "👋 *Добро пожаловать!*\n"
+            "В нашем боте можно бесплатно зарабатывать звёзды, мы вывели уже более *250 тысяч звёзд*, посмотри –\n"
+            "[🔗 https://t.me/FreeStard](https://t.me/FreeStard)\n\n"
+            "🎁 *За регистрацию в боте, дарим тебе первую* `1⭐`, *получай больше звёзд этими способами:*\n"
+            "• 🎯 *Выполняй задания*\n"
+            "• 💎 *Забирай ежедневный бонус*\n"
+            "• 👥 *Приглашай друзей по ссылке и получай по* `2⭐` *за каждого, просто отправь её другу:*\n"
+            f"[🔗 https://t.me/FreeStard_bot?start={callback.from_user.id}](https://t.me/FreeStard_bot?start={callback.from_user.id})\n\n"
+            "*Как только заработаешь минимум* `15⭐`, *выводи их в разделе* «💰 *Вывести звёзды*», *мы отправим тебе подарок за выбранное количество звёзд, удачи!*\n\n"
+            )
+        await callback.message.answer(start,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
+        await callback.message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
+    else:
+        await callback.answer("❌ Вы не подписаны на канал! Подпишитесь и попробуйте снова.",show_alert=True)
 
 @user.callback_query(F.data == 'task')
 async def task_handler(callback:CallbackQuery, state:FSMContext):
@@ -155,6 +200,8 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
 
     if not task:
         await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        await callback.answer()
+
         return
 
     text = (
@@ -164,9 +211,10 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
     )
     await state.update_data(task = task)
 
-
-    await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=kb.complete_inline)
+    keyboard = await kb.complete_task_inline(task.link)
+    await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
     await callback.answer()
+
 
 @user.message(F.text == '⭐️Заработать звёзды')
 async def ref_system(message: Message):
@@ -255,10 +303,12 @@ async def fail_callback(callback: CallbackQuery):
     await callback.message.delete()
 
 
-@user.message(F.text == 'test_chat')
-async def test_handler(message:Message,bot: Bot):
-    chat = await bot.get_chat("@vyvod_star")
-    print(f"Group ID: {chat.id}")
+#TEST
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+
+
 
 @user.message(F.text == ("test"))
 async def check_admin_handler(message: Message, bot: Bot):
@@ -284,18 +334,35 @@ async def is_user_subscribed_handler(chat_id: int, user_id: int,bot:Bot) -> bool
         return False
     
     
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import Message, ContentType
 
-@user.message(F.content_type.in_({"text", "photo", "video", "document", "audio", "voice", "sticker", "animation", "location", "contact", "venue", "dice", "poll", "game", "invoice", "successful_payment", "passport_data"}))
-async def handle_message(message: Message):
-    if message.forward_from_chat:  # Проверяем, что сообщение переслано из канала
-        channel_id = message.forward_from_chat.id  # Извлекаем ID канала
-        channel_title = message.forward_from_chat.title  # Название канала (если есть)
-        
-        response = f"ID канала: {channel_id}\n"
-        response += f"Название канала: {channel_title}"
-        
-        await message.reply(response)
+YOUR_CHANNEL_ID = -1002503607464
+
+from aiogram import types
+
+
+@user.chat_join_request()
+async def handle_join_request(update: types.ChatJoinRequest):
+    user_id = update.from_user.id
+    channel_id = update.chat.id
+    await update.bot.send_message(chat_id=user_id, text='Вы кинули заявку')
+    complete = await join_request(user_id, channel_id)
+    if complete:
+        await update.bot.send_message(chat_id=user_id, text='Вы выполнили задание')
+"""    # Принтим ID пользователя и ID канала
+    print(f"📌 Новая заявка от пользователя: {user_id}")
+    print(f"📌 ID канала: {channel_id}")
+
+    if channel_id == YOUR_CHANNEL_ID:  # Проверка, что заявка пришла в нужный канал
+        print("✅ Заявка пришла в нужный канал")
+        return True
     else:
-        await message.reply("Сообщение не переслано из канала.")
+        print("❌ Заявка пришла не в тот канал")
+        return False
+"""
+
+
+#@user.message(F.forward_from_chat)
+async def testter(message:Message):
+    if message.forward_from_chat:
+            chat_title = message.forward_from_chat.title
+            await message.answer(chat_title)

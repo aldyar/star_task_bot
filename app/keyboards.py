@@ -1,5 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMarkup, InlineKeyboardButton
-from app.database.requests import get_withdraw_limit
+from app.database.requests import get_withdraw_limit,get_task_about_taskid
 main = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = '⭐️Заработать звёзды')],
                                      [KeyboardButton(text = '🎁Вывести звёзды')],
                                      [KeyboardButton(text = '🎯Задания'),
@@ -40,27 +40,17 @@ withdraw_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(te
                                                            InlineKeyboardButton(text = '350⭐️',callback_data='350')],
                                                            [InlineKeyboardButton(text = '500⭐️',callback_data='500')]])
 
-complete_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✅Выполнил', callback_data='complete_task')]])
+complete_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Выполнить',url = ''),
+                                                        InlineKeyboardButton(text = '✅Выполнил', callback_data='complete_task')],
+                                                        [InlineKeyboardButton(text = '⏩Пропустить', callback_data= 'skip')]])
 
 
-"""async def withdraw_inline():
-    # Значения по умолчанию
-    default_values = [15, 25, 50, 100, 150, 350, 500]
+async def complete_task_inline(link):
+    complete_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Выполнить',url = f'{link}'),
+                                                        InlineKeyboardButton(text = '✅Выполнил', callback_data='complete_task')],
+                                                        [InlineKeyboardButton(text = '⏩Пропустить', callback_data= 'skip')]])
 
-    # Получаем лимиты из базы данных
-    limits = await get_withdraw_limit()
-
-    # Если значения в БД есть, используем их, иначе используем значения по умолчанию
-    buttons = limits if limits else default_values
-
-    # Формируем клавиатуру
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=str(value), callback_data=f"withdraw_{value}")] for value in buttons
-        ]
-    )
-
-    return keyboard"""
+    return complete_inline
 
 
 async def withdraw_keyboard():
