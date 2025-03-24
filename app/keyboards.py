@@ -100,3 +100,15 @@ edit_bonus = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 
 
 stat_edit = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Сортировать по дате',callback_data='num_date')]])
 
+inline_task_type = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Подписка',callback_data= 'subscribe')],
+                                                         [InlineKeyboardButton(text = 'Заявка', callback_data = 'entry')]])
+
+describe_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '❌Без текстат', callback_data= 'describe_none')]])
+
+
+async def entry_type_inline(link):
+    entry_type_inline =  InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Выполнить',url = f'{link}')],
+                                                        [InlineKeyboardButton(text = '⏩Пропустить', callback_data= 'skip')]])
+    return entry_type_inline
+
+next_task_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '🎯Следующее задание',callback_data='task')]])

@@ -41,6 +41,13 @@ async def tasks (message: Message,state:FSMContext):
 
 @admin.callback_query(F.data == 'create_task')
 async def create_task_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.answer('📌Выберите тип задания ',reply_markup=kb.inline_task_type)
+    await callback.answer()
+
+@admin.callback_query(F.data.in_({'subscribe', 'entry'}))
+async def task_type_process(callback: CallbackQuery, state: FSMContext):
+    task_type = callback.data 
+    await state.update_data(task_type=task_type)
     await callback.message.answer(
         "📌 Введите ссылку на задание в формате `https://t.me/...`", parse_mode='Markdown', disable_web_page_preview=True
     )
@@ -51,8 +58,25 @@ async def create_task_handler(callback: CallbackQuery, state: FSMContext):
 async def process_link(message: Message, state: FSMContext):
     link = message.text.strip()
     await state.update_data(link=link)
+    await message.answer('Введите описание задания разметкой Markdown...',reply_markup=kb.describe_inline)
+    await state.set_state(CreateTask.waiting_for_description)
+
+
+@admin.message(CreateTask.waiting_for_description)
+async def process_describe(message:Message,state:FSMContext):
+    describe = message.text
+    await state.update_data(describe = describe)
     await message.answer("💰 Введите вознаграждение за выполнение (в цифрах):")
     await state.set_state(CreateTask.waiting_for_reward)
+
+
+
+@admin.callback_query(F.data == 'describe_none')
+async def describe_none_handler(callback:CallbackQuery,state:FSMContext):
+    await callback.message.delete()
+    await callback.message.answer("💰 Введите вознаграждение за выполнение (в цифрах):")
+    await state.set_state(CreateTask.waiting_for_reward)
+
 
 
 @admin.message(CreateTask.waiting_for_reward)
@@ -68,13 +92,13 @@ async def process_reward(message: Message, state: FSMContext):
     await state.set_state(CreateTask.waiting_for_count)
 
 
+
 @admin.message(CreateTask.waiting_for_count)
 async def process_count(message: Message, state: FSMContext):
     if not message.text.isdigit():
         await message.answer("❌ Пожалуйста, введите количество выполнений числом.")
         return
-
-
+    
     await state.update_data(count=int(message.text))
     await message.answer('📨 Перешлите любое сообщение из данной канала:')
     await state.set_state(CreateTask.waiting_fot_chat_id)
@@ -84,13 +108,16 @@ async def process_count(message: Message, state: FSMContext):
 async def process_chat_id(message: Message, state: FSMContext):
     if message.forward_from_chat:  # Проверяем, что сообщение переслано из чата или канала
         chat_id = message.forward_from_chat.id
+        title =  message.forward_from_chat.title
         await message.answer(f"Chat ID успешно получен: `{chat_id}`", parse_mode="Markdown")
         data = await state.get_data()
         link = data['link'] 
         reward = data['reward']
         count = data['count']
+        task_type = data['task_type']
+        describe = data.get('describe')
         print(f'link: {link}, reward: {reward}, count: {count}')
-        await create_task(link, reward, count,chat_id)
+        await create_task(link, reward, count, chat_id,title, task_type, describe)
 
         text = f"""
     ✅ *Задание успешно создано!*
@@ -99,6 +126,8 @@ async def process_chat_id(message: Message, state: FSMContext):
     📊 *Количество выполнений:* {count}
     ✉️ *ID канала:* {chat_id}
     """
+        if describe:
+            await message.answer(f"\n📝 *Описание:* {describe}", parse_mode='Markdown')
         await message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
         await state.clear()
         

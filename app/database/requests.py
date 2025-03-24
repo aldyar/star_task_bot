@@ -172,12 +172,15 @@ async def edit_ref_reward(session, reward):
         await session.commit()
 
 @connection 
-async def create_task(session, link, reward, total_completions,chat_id):
+async def create_task(session, link, reward, total_completions,chat_id,title, task_type, description=None):
     new_task = Task(
         link=link,
         reward=reward,
         total_completions=total_completions,
-        chat_id = chat_id
+        chat_id = chat_id,
+        title = title,
+        type = task_type,
+        description = description
     )   
     session.add(new_task)
     await session.commit()
@@ -432,7 +435,7 @@ async def check_subscriptions(session, bot: Bot):
                     user = await session.scalar(select(User).where(User.tg_id == user_id))
                     channel_username = task.link.split("t.me/")[-1].strip("/")
                     text = (
-                            f"❌ *Вы только что отписались от канала* [@{channel_username}]({task.link}) *и нарушили условие задания №{task.id}!*\n\n"
+                            f"❌ *Вы только что отписались от канала* [@{task.title}]({task.link}) *и нарушили условие задания №{task.id}!*\n\n"
                             f"   *• С баланса в боте списано {task.reward}⭐*\n\n"
                             f"*Больше не отписывайтесь от каналов в заданиях, чтобы не получать штрафы!*"
                             )
@@ -446,7 +449,7 @@ async def check_subscriptions(session, bot: Bot):
                     user = await session.scalar(select(User).where(User.tg_id == user_id))
                     channel_username = task.link.split("t.me/")[-1].strip("/")
                     text = (
-                            f"✅ *Спасибо за повторную подписку на канал* [@{channel_username}]({task.link})!\n\n"
+                            f"✅ *Спасибо за повторную подписку на канал* [@{task.title}]({task.link})!\n\n"
                             f"   *• На ваш баланс в боте добавлено {task.reward}⭐️*\n\n"
                             f"*Продолжайте оставаться подписанным, чтобы не терять свои баллы!*"
                             )
@@ -460,7 +463,7 @@ async def check_subscriptions(session, bot: Bot):
             print(f"Ошибка при выполнении запроса к БД: {e}")
 
         print(f"--- Проверка подписок завершена. Ожидание 24 часа. ---")
-        await asyncio.sleep(400)
+        await asyncio.sleep(3)
 
 
 @connection
@@ -503,10 +506,8 @@ async def count_reward(session, tg_id):
 async def join_request(session,user_id,chat_id):
     task = await session.scalar(select(Task).where(Task.chat_id == chat_id,Task.is_active == True))
     if task:
-        await completed_task(task.id,user_id,task.reward)
-        return True
-    else:
-        return False
+        result = await completed_task(task.id,user_id,task.reward)
+        return result 
     
 
 @connection
@@ -519,3 +520,5 @@ async def skip_task(session, user_id, task_id):
         return task
     else:
         return False
+    
+    

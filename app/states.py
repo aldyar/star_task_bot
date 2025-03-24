@@ -6,7 +6,8 @@ class CreateTask(StatesGroup):
     waiting_for_reward = State()
     waiting_for_count = State()
     waiting_fot_chat_id = State()
-
+    waiting_for_task_type = State()
+    waiting_for_description = State()
 
 class EditTask(StatesGroup):
     adding_completions = State()

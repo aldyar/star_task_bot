@@ -55,8 +55,9 @@ class Task(Base):
     completed_count: Mapped[int] = mapped_column(Integer, default=0)  # Сколько раз уже выполнили
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)  # Активно ли задание
     chat_id: Mapped[int] = mapped_column(Integer,nullable=True)
-    
-
+    type: Mapped[str] = mapped_column(String, nullable=True)
+    title: Mapped[str] = mapped_column(String,nullable=True)    
+    description: Mapped[str] = mapped_column(String, nullable=True)
 
 class TaskCompletion(Base):
     __tablename__ = "task_completions"
