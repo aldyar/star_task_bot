@@ -294,9 +294,9 @@ async def find_active_task_from(session, start_id: int):
     
     if task:
         return task  # Если задание активно, возвращаем его
-    elif not task:
-        return False
-    # Если задание не активно, продолжаем искать дальше
+    #elif not task:
+        #return False
+    # Если задание не активно, продолжаем искать дальше 
     current_id = start_id + 1
     
     # Получаем максимальный ID существующего задания

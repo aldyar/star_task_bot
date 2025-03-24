@@ -113,7 +113,7 @@ async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext)
         if copmpleted:
             message_text = (f'🎯*Задание под номером  №*{task_present.id} *завершило работу*\n\n'
                             f'• *Ссылка на задание:* [{task_present.link}]({task_present.link})\n'
-                            f'• *Колличество выполнений:*{task_present.completed_count}')
+                            f'• *Колличество выполнений:* {task_present.completed_count+1}')
             for admin_id in ADMIN:
                 await bot.send_message(admin_id, message_text,parse_mode='Markdown', disable_web_page_preview=True)
         await callback.answer('⭐Вознаграждения зачислено')
@@ -210,7 +210,9 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
         f"•<b> Награда: {task.reward}⭐</b>"
     )
     await state.update_data(task = task)
-
+    reward = await count_reward(callback.from_user.id)
+    await callback.message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+                         '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
     keyboard = await kb.complete_task_inline(task.link)
     await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
     await callback.answer()
@@ -278,7 +280,7 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
         # Сообщение для группы
         group_message = (
             f"*⏳ Новая заявка №{transaction.id} на получение подарка за {value}⭐* "
-            f"*от пользователя [{user.username}](http://t.me/{user.username})*"
+            f"*от пользователя *[{user.username}](http://t.me/{user.username})"
         )
 
         await callback.message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)

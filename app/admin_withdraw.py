@@ -123,8 +123,15 @@ async def complete_withdraw(callback: CallbackQuery, bot: Bot):
             '*Создать заявку: @FreeStard_bot*',
             reply_to_message_id=transaction.message_id, parse_mode='Markdown'
         )
-        updated_text = callback.message.text.replace("_Ожидает выполнения_", "*✅ Выполнено*")
-        await callback.message.edit_text(updated_text, parse_mode="Markdown")
+        await callback.message.delete()
+        updated_text = (
+            f"📌 *Заявка №{transaction.id}*\n"
+            f"👤 *Пользователь:* `{transaction.username or 'Не указан'}`\n"
+            f"🆔 *TG ID:* `{transaction.tg_id}`\n"
+            f"💰 *Сумма:* `{transaction.amount} ⭐️`\n"
+            f"✅ *Статус:* Выполнено"
+        )
+        await callback.message.answer(updated_text, parse_mode="Markdown")
         await callback.answer("Заявка успешно выполнена! ✅")
     else:
         await callback.answer("Ошибка при обновлении заявки!", show_alert=True)
