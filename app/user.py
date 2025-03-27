@@ -393,7 +393,7 @@ async def handle_join_request(update: types.ChatJoinRequest,state:FSMContext):
     complete = await join_request(user_id, channel_id)
     if complete:
         complete_text = (
-                f'*✅ Задание выполнено! ###{task.id}*\n\n'
+                f'*✅ Задание выполнено!*\n\n'
                 f'*• Можете продолжать выполнения заданий*'
                 )
     await update.bot.send_message(chat_id=user_id, text=complete_text,parse_mode='Markdown',reply_markup=kb.next_task_inline)    

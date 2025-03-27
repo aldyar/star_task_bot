@@ -506,8 +506,8 @@ async def count_reward(session, tg_id):
 async def join_request(session,user_id,chat_id):
     task = await session.scalar(select(Task).where(Task.chat_id == chat_id,Task.is_active == True))
     if task:
-        result = await completed_task(task.id,user_id,task.reward)
-        return result 
+        await completed_task(task.id,user_id,task.reward)
+        return True 
     
 
 @connection

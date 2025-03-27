@@ -119,7 +119,7 @@ async def complete_withdraw(callback: CallbackQuery, bot: Bot):
     if success:
         await bot.send_message(
             GROUP_ID,
-            f"*✅ #Заявка_{transaction.id} выполнена, отправили подарок за 25⭐️.*\n\n"
+            f"*✅ #Заявка_{transaction.id} выполнена, отправили подарок за {transaction.amount}⭐️.*\n\n"
             '*Создать заявку: @FreeStard_bot*',
             reply_to_message_id=transaction.message_id, parse_mode='Markdown'
         )
