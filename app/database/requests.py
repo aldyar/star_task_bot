@@ -126,11 +126,6 @@ async def create_config(session):
     session.add(new_config)
     await session.commit()
 
-@connection
-async def get_task(session, task_id):
-    task = await session.scalar(select(Task).where(Task.id == task_id))
-    return task
-
 
 @connection
 async def edit_task_reward(session, task_id, reward):

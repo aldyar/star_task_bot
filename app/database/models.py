@@ -43,6 +43,7 @@ class Config(Base):
     start_text: Mapped[int] = mapped_column(String )
     ref_reward: Mapped[float] = mapped_column(Float)
     ref_text: Mapped[str] = mapped_column(String)
+    image_link: Mapped[str] = mapped_column(String,nullable=True)
 
 
 class Task(Base):
@@ -59,6 +60,17 @@ class Task(Base):
     title: Mapped[str] = mapped_column(String,nullable=True)    
     description: Mapped[str] = mapped_column(String, nullable=True)
 
+
+class TaskHistory(Base):
+    __tablename__ = 'task_history'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tg_id: Mapped[int] = mapped_column(BigInteger)
+    task_id: Mapped[int] = mapped_column(Integer)
+    chat_id: Mapped[int] = mapped_column(Integer)
+    completed: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
+
+
 class TaskCompletion(Base):
     __tablename__ = "task_completions"
 
@@ -66,15 +78,14 @@ class TaskCompletion(Base):
     tg_id: Mapped[int] = mapped_column(BigInteger, nullable=False)  # Telegram ID пользователя
     task_id: Mapped[int] = mapped_column(Integer, nullable=False)  # ID задания
     completed: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
-    last_checked: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     is_subscribed : Mapped[bool] = mapped_column(Boolean, default=True)
 
 class Transaction(Base):
     __tablename__ = 'transactions'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tg_id: Mapped[int] = mapped_column(ForeignKey('users.tg_id'), nullable=False)
-    username: Mapped[str] = mapped_column(ForeignKey ('users.username'), nullable=True)
+    tg_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    username: Mapped[str] = mapped_column(String, nullable=True)
     amount: Mapped[int] = mapped_column(Integer)
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     created: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())

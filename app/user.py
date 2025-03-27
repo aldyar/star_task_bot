@@ -7,6 +7,7 @@ from app.database.requests import (set_user, get_config, get_bonus_update, updat
                                    get_withdraw_limit, set_referrer_id, create_transaction, get_task,
                                    is_user_subscribed,completed_task,create_task_completions,check_subscriptions,
                                    check_user,insert_message_id, count_reward,join_request,skip_task)
+from app.database.task_req import get_first_available_task,skip_task_function
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
@@ -56,7 +57,7 @@ async def success_message(message: Message):
 
 @user.message(F.text == '🎯Задания')
 async def get_task_hander(message: Message,state: FSMContext):
-    task = await get_task(message.from_user.id)  # Получаем список доступных заданий
+    task = await get_first_available_task(message.from_user.id)  # Получаем список доступных заданий
 
     if not task:
         await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
@@ -65,7 +66,7 @@ async def get_task_hander(message: Message,state: FSMContext):
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
         
         if task.description:  # Проверяем, есть ли описание
-            text += f"{task.description}\n"
+            text += f"{task.description}\n\n"
 
         text += f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
         text += f"•<b> Награда: {task.reward}⭐</b>"
@@ -79,7 +80,7 @@ async def get_task_hander(message: Message,state: FSMContext):
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
         
         if task.description:  # Проверяем, есть ли описание
-            text += f"{task.description}\n"
+            text += f"{task.description}\n\n"
 
         text += f"•<b> Подай заявку в канал <a href='{task.link}'>{task.link}</a></b>\n"
         text += f"•<b> Награда: {task.reward}⭐</b>"
@@ -97,7 +98,7 @@ async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
     await callback.message.delete()
     data = await state.get_data()
     task_present = data.get("task")
-    task = await skip_task(callback.from_user.id,task_present.id)
+    task = await skip_task_function(callback.from_user.id,task_present.id)
     if not task:
         await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
         return
@@ -106,7 +107,7 @@ async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
         
         if task.description:  # Проверяем, есть ли описание
-            text += f"{task.description}\n"
+            text += f"{task.description}\n\n"
 
         text += f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
         text += f"•<b> Награда: {task.reward}⭐</b>"
@@ -116,7 +117,7 @@ async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
         
         if task.description:  # Проверяем, есть ли описание
-            text += f"{task.description}\n"
+            text += f"{task.description}\n\n"
 
         text += f"•<b> Подай заявку в канал <a href='{task.link}'>{task.link}</a></b>\n"
         text += f"•<b> Награда: {task.reward}⭐</b>"
@@ -148,7 +149,7 @@ async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext)
         await callback.answer('⭐Вознаграждения зачислено')
         await create_task_completions(callback.from_user.id,task_present.id)
         await callback.message.delete()
-        task = await get_task(callback.from_user.id)  # Получаем список доступных заданий
+        task = await get_first_available_task(callback.from_user.id)  # Получаем список доступных заданий
         await state.update_data(task = task)
 
         if not task:
@@ -236,7 +237,7 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
 
 @user.callback_query(F.data == 'task')
 async def task_handler(callback:CallbackQuery, state:FSMContext):
-    task = await get_task(callback.from_user.id)  # Получаем список доступных заданий
+    task = await get_first_available_task(callback.from_user.id)  # Получаем список доступных заданий
 
     if not task:
         await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
