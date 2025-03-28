@@ -1,5 +1,5 @@
 from app.database.models import async_session
-from app.database.models import User, Config, Task, TaskCompletion, Transaction
+from app.database.models import User, Config, Task, TaskCompletion, Transaction, TaskHistory
 from sqlalchemy import select, update, delete, desc
 from decimal import Decimal
 from datetime import datetime
@@ -428,6 +428,7 @@ async def check_subscriptions(session, bot: Bot):
 
                 if not is_subscribed and task_completion.is_subscribed:
                     user = await session.scalar(select(User).where(User.tg_id == user_id))
+                    task_history = await session.scalar(select(TaskHistory).where(TaskHistory.tg_id == user_id,TaskHistory.task_id == task.id))
                     channel_username = task.link.split("t.me/")[-1].strip("/")
                     text = (
                             f"❌ *Вы только что отписались от канала* [@{task.title}]({task.link}) *и нарушили условие задания №{task.id}!*\n\n"
@@ -439,8 +440,10 @@ async def check_subscriptions(session, bot: Bot):
                     if user:
                         user.balance -= task.reward
                         task_completion.is_subscribed = False
+                        await session.delete(task_history)
+                        await session.delete(task_completion)
                         await session.commit()
-                elif is_subscribed and not task_completion.is_subscribed:
+                """elif is_subscribed and not task_completion.is_subscribed:
                     user = await session.scalar(select(User).where(User.tg_id == user_id))
                     channel_username = task.link.split("t.me/")[-1].strip("/")
                     text = (
@@ -453,7 +456,7 @@ async def check_subscriptions(session, bot: Bot):
                     if user:
                         user.balance += task.reward
                         task_completion.is_subscribed = True
-                        await session.commit()
+                        await session.commit()"""
         except Exception as e:
             print(f"Ошибка при выполнении запроса к БД: {e}")
 
@@ -462,11 +465,18 @@ async def check_subscriptions(session, bot: Bot):
 
 
 @connection
-async def create_task_completions(session,tg_id, task_id):
+async def create_task_completions_history(session,tg_id, task_id):
+    task = await session.scalar(select(Task).where(Task.id == task_id))
     new_task_comp = TaskCompletion(
         tg_id = tg_id,
         task_id = task_id
     )
+    new_task_history = TaskHistory(
+        tg_id = tg_id,
+        task_id = task_id,
+        chat_id = task.chat_id
+    )
+    session.add(new_task_history)
     session.add(new_task_comp)
     await session.commit()
 

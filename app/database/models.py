@@ -91,7 +91,14 @@ class Transaction(Base):
     created: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
     message_id:Mapped[int] = mapped_column(Integer,nullable=True)
 
-    
+class TaskState(Base):
+    __tablename__ = 'task_states'
+
+    tg_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    task_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    chat_id: Mapped[int] = mapped_column(Integer,nullable=True)
+
+
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

@@ -5,9 +5,9 @@ from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
                                    get_withdraw_limit, set_referrer_id, create_transaction, get_task,
-                                   is_user_subscribed,completed_task,create_task_completions,check_subscriptions,
-                                   check_user,insert_message_id, count_reward,join_request,skip_task)
-from app.database.task_req import get_first_available_task,skip_task_function
+                                   is_user_subscribed,completed_task,create_task_completions_history,check_subscriptions,
+                                   check_user,insert_message_id, count_reward,join_request,skip_task,get_task_about_taskid)
+from app.database.task_req import get_first_available_task,skip_task_function,create_task_state,get_task_state,create_task_history,check_entry_task_history
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
@@ -17,7 +17,7 @@ import text as txt
 user = Router()
 from config import ADMIN, GROUP_ID,CHANNEL_ID
 from app.admin import start_admin
-import uuid
+from aiogram import types
 
 @user.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
@@ -63,33 +63,34 @@ async def get_task_hander(message: Message,state: FSMContext):
         await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
         return
     if task.type == 'subscribe':
-        text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
-        
+        text = f"🎯 *Доступно задание №{task.id}!*\n\n"
+
         if task.description:  # Проверяем, есть ли описание
             text += f"{task.description}\n\n"
 
-        text += f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
-        text += f"•<b> Награда: {task.reward}⭐</b>"
+        text += f"• *Подпишись на* [{task.link}]({task.link})\n"
+        text += f"• *Награда: {task.reward}⭐*"
         await state.update_data(task = task)
         reward = await count_reward(message.from_user.id)
         await message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.complete_task_inline(task.link)
-        await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        await message.answer(text, parse_mode="Markdown", disable_web_page_preview=True, reply_markup=keyboard)
     elif task.type == 'entry':
-        text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
+        text = f"🎯 *Доступно задание №{task.id}!*\n\n"
         
         if task.description:  # Проверяем, есть ли описание
             text += f"{task.description}\n\n"
 
-        text += f"•<b> Подай заявку в канал <a href='{task.link}'>{task.link}</a></b>\n"
-        text += f"•<b> Награда: {task.reward}⭐</b>"
+        text += f"• *Подай заявку в канал* [{task.link}]({task.link})\n"
+        text += f"• *Награда: {task.reward}⭐*"
         await state.update_data(task = task)
+        await create_task_state(message.from_user.id,task.id)
         reward = await count_reward(message.from_user.id)
         await message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.entry_type_inline(task.link)
-        await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        await message.answer(text, parse_mode="Markdown", disable_web_page_preview=True, reply_markup=keyboard)
 
 
 
@@ -104,25 +105,28 @@ async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
         return
     if task.type == 'subscribe':
     
-        text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
-        
+        text = f"🎯 *Доступно задание №{task.id}!*\n\n"
+
         if task.description:  # Проверяем, есть ли описание
             text += f"{task.description}\n\n"
 
-        text += f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
-        text += f"•<b> Награда: {task.reward}⭐</b>"
+        text += f"• *Подпишись на* [{task.link}]({task.link})\n"
+        text += f"• *Награда: {task.reward}⭐*"
+        await state.update_data(task = task)
         keyboard = await kb.complete_task_inline(task.link)
-        await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        await callback.message.answer(text, parse_mode="Markdown", disable_web_page_preview=True, reply_markup=keyboard)
     elif task.type == 'entry':
-        text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
+        text = f"🎯 *Доступно задание №{task.id}!*\n\n"
         
         if task.description:  # Проверяем, есть ли описание
             text += f"{task.description}\n\n"
 
-        text += f"•<b> Подай заявку в канал <a href='{task.link}'>{task.link}</a></b>\n"
-        text += f"•<b> Награда: {task.reward}⭐</b>"
+        text += f"• *Подай заявку в канал* [{task.link}]({task.link})\n"
+        text += f"• *Награда: {task.reward}⭐*"
+        await state.update_data(task = task)
+        await create_task_state(callback.from_user.id,task.id)
         keyboard = await kb.entry_type_inline(task.link)
-        await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        await callback.message.answer(text, parse_mode="Markdown", disable_web_page_preview=True, reply_markup=keyboard)
 
 
 
@@ -147,7 +151,7 @@ async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext)
             for admin_id in ADMIN:
                 await bot.send_message(admin_id, message_text,parse_mode='Markdown', disable_web_page_preview=True)
         await callback.answer('⭐Вознаграждения зачислено')
-        await create_task_completions(callback.from_user.id,task_present.id)
+        await create_task_completions_history(callback.from_user.id,task_present.id)
         await callback.message.delete()
         task = await get_first_available_task(callback.from_user.id)  # Получаем список доступных заданий
         await state.update_data(task = task)
@@ -160,25 +164,26 @@ async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext)
 
         if task.type == 'subscribe':
     
-            text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
-            
-            if task.description:  # Проверяем, есть ли описание
-                text += f"{task.description}\n"
+            text = f"🎯 *Доступно задание №{task.id}!*\n\n"
 
-            text += f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
-            text += f"•<b> Награда: {task.reward}⭐</b>"
+            if task.description:  # Проверяем, есть ли описание
+                text += f"{task.description}\n\n"
+
+            text += f"• *Подпишись на* [{task.link}]({task.link})\n"
+            text += f"• *Награда: {task.reward}⭐*"
             keyboard = await kb.complete_task_inline(task.link)
-            await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+            await callback.message.answer(text, parse_mode="Markdown", disable_web_page_preview=True, reply_markup=keyboard)
         elif task.type == 'entry':
-            text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
-            
+            text = f"🎯 *Доступно задание №{task.id}!*\n\n"
+        
             if task.description:  # Проверяем, есть ли описание
-                text += f"{task.description}\n"
+                text += f"{task.description}\n\n"
 
-            text += f"•<b> Подай заявку в канал <a href='{task.link}'>{task.link}</a></b>\n"
-            text += f"•<b> Награда: {task.reward}⭐</b>"
+            text += f"• *Подай заявку в канал* [{task.link}]({task.link})\n"
+            text += f"• *Награда: {task.reward}⭐*"
+            await create_task_state(callback.from_user.id,task.id)
             keyboard = await kb.entry_type_inline(task.link)
-            await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+            await callback.message.answer(text, parse_mode="Markdown", disable_web_page_preview=True, reply_markup=keyboard)
 
 
 
@@ -235,28 +240,46 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
     else:
         await callback.answer("❌ Вы не подписаны на канал! Подпишитесь и попробуйте снова.",show_alert=True)
 
+
+
 @user.callback_query(F.data == 'task')
 async def task_handler(callback:CallbackQuery, state:FSMContext):
     task = await get_first_available_task(callback.from_user.id)  # Получаем список доступных заданий
 
     if not task:
         await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
-        await callback.answer()
-
         return
+    if task.type == 'subscribe':
+        text = f"🎯 *Доступно задание №{task.id}!*\n\n"
 
-    text = (
-        f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
-        f"•<b> Подпишись на <a href='{task.link}'>{task.link}</a></b>\n"
-        f"•<b> Награда: {task.reward}⭐</b>"
-    )
-    await state.update_data(task = task)
-    reward = await count_reward(callback.from_user.id)
-    await callback.message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
-                         '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
-    keyboard = await kb.complete_task_inline(task.link)
-    await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        if task.description:  # Проверяем, есть ли описание
+            text += f"{task.description}\n\n"
+
+        text += f"• *Подпишись на* [{task.link}]({task.link})\n"
+        text += f"• *Награда: {task.reward}⭐*"
+        await state.update_data(task = task)
+        reward = await count_reward(callback.from_user.id)
+        await callback.message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+                            '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
+        keyboard = await kb.complete_task_inline(task.link)
+        await callback.message.answer(text, parse_mode="Markdown", disable_web_page_preview=True, reply_markup=keyboard)
+    elif task.type == 'entry':
+        text = f"🎯 *Доступно задание №{task.id}!*\n\n"
+        
+        if task.description:  # Проверяем, есть ли описание
+            text += f"{task.description}\n\n"
+
+        text += f"• *Подай заявку в канал* [{task.link}]({task.link})\n"
+        text += f"• *Награда: {task.reward}⭐*"
+        await state.update_data(task = task)
+        await create_task_state(callback.from_user.id,task.id)
+        reward = await count_reward(callback.from_user.id)
+        await callback.message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+                            '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
+        keyboard = await kb.entry_type_inline(task.link)
+        await callback.message.answer(text, parse_mode="Markdown", disable_web_page_preview=True, reply_markup=keyboard)
     await callback.answer()
+
 
 
 @user.message(F.text == '⭐️Заработать звёзды')
@@ -378,26 +401,35 @@ async def is_user_subscribed_handler(chat_id: int, user_id: int,bot:Bot) -> bool
     
     
 
-YOUR_CHANNEL_ID = -1002503607464
 
-from aiogram import types
 
 
 @user.chat_join_request()
-async def handle_join_request(update: types.ChatJoinRequest,state:FSMContext):
-    data = await state.get_data()
-    task = data.get("task")
-    
+async def handle_join_request(update: types.ChatJoinRequest):
     user_id = update.from_user.id
-    channel_id = update.chat.id
-
-    complete = await join_request(user_id, channel_id)
-    if complete:
+    chat_id = update.chat.id
+    task = await get_task_state(user_id)
+    object = await get_task_about_taskid(task.task_id)
+    check_history = await check_entry_task_history(user_id,object.id)
+    if check_history:
+        await create_task_history(user_id,object.id,chat_id)
+        completed = await completed_task(object.id,user_id,object.reward)
+        await update.bot.send_message(chat_id=user_id, text=f'FIND TASK ID:{task.task_id}') 
+        #complete = await join_request(user_id, chat_id)
         complete_text = (
-                f'*✅ Задание выполнено!*\n\n'
-                f'*• Можете продолжать выполнения заданий*'
+                    f'*✅ Задание №{object.id} выполнено!*\n\n'
+                    f'*• {object.reward}⭐️ начислено на ваш баланс в боте, не отписывайтесь от канала в течении 7 дней, иначе звёзды будут обнулены!!*'
                 )
-    await update.bot.send_message(chat_id=user_id, text=complete_text,parse_mode='Markdown',reply_markup=kb.next_task_inline)    
+        await update.bot.send_message(chat_id=user_id, text=complete_text,parse_mode='Markdown',reply_markup=kb.next_task_inline)
+    elif not check_history:
+        await update.bot.send_message(chat_id=user_id,text = '*Задание выполнено, выберите другое задание*',parse_mode='Markdown',reply_markup=kb.next_task_inline)
+    if completed:
+            message_text = (f'🎯*Задание под номером  №*{object.id} *завершило работу*\n\n'
+                            f'• *Ссылка на задание:* [{object.link}]({object.link})\n'
+                            f'• *Колличество выполнений:* {object.completed_count+1}')
+            for admin_id in ADMIN:
+                await update.bot.send_message(admin_id, message_text,parse_mode='Markdown', disable_web_page_preview=True)
+
 
         
 
