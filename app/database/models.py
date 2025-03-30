@@ -40,7 +40,7 @@ class Config(Base):
     withdraw_5: Mapped[int] = mapped_column(Integer, default=150)
     withdraw_6: Mapped[int] = mapped_column(Integer, default=350)
     withdraw_7: Mapped[int] = mapped_column(Integer, default=500)
-    start_text: Mapped[int] = mapped_column(String )
+    start_text: Mapped[str] = mapped_column(String )
     ref_reward: Mapped[float] = mapped_column(Float)
     ref_text: Mapped[str] = mapped_column(String)
     image_link: Mapped[str] = mapped_column(String,nullable=True)

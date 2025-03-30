@@ -18,6 +18,9 @@ user = Router()
 from config import ADMIN, GROUP_ID,CHANNEL_ID
 from app.admin import start_admin
 from aiogram import types
+from aiogram.types import FSInputFile
+
+
 
 @user.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
@@ -39,18 +42,18 @@ async def cmd_start(message: Message, state: FSMContext):
 
 
 async def success_message(message: Message):
-    start =   (
-        "👋 *Добро пожаловать!*\n"
-        "В нашем боте можно бесплатно зарабатывать звёзды, мы вывели уже более *250 тысяч звёзд*, посмотри –\n"
-        "[🔗 https://t.me/FreeStard](https://t.me/FreeStard)\n\n"
-        "🎁 *За регистрацию в боте, дарим тебе первую* `1⭐`, *получай больше звёзд этими способами:*\n"
-        "• 🎯 *Выполняй задания*\n"
-        "• 💎 *Забирай ежедневный бонус*\n"
-        "• 👥 *Приглашай друзей по ссылке и получай по* `2⭐` *за каждого, просто отправь её другу:*\n"
-        f"[🔗 https://t.me/FreeStard_bot?start={message.from_user.id}](https://t.me/FreeStard_bot?start={message.from_user.id})\n\n"
-        "*Как только заработаешь минимум* `15⭐`, *выводи их в разделе* «💰 *Вывести звёзды*», *мы отправим тебе подарок за выбранное количество звёзд, удачи!*\n\n"
-        )
-    await message.answer(start,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
+    text = await get_config('start_text')
+    image_url = await get_config('image_link')  # Получаем ссылку на изображение
+
+
+    user_id = message.from_user.id
+    formatted_text = text.format(user_id=user_id)
+
+    if image_url:
+        photo = FSInputFile(image_url)
+        await message.answer_photo(photo, caption=formatted_text, parse_mode="Markdown", reply_markup=kb.main)
+    else:
+        await message.answer(formatted_text, parse_mode="Markdown", reply_markup=kb.main,disable_web_page_preview=True)
     await message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
 
 
@@ -224,18 +227,10 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
         user = await callback.bot.get_chat(callback.from_user.id)
         username = user.username 
         await set_user(callback.from_user.id, username, referrer_id)
-        start =   (
-            "👋 *Добро пожаловать!*\n"
-            "В нашем боте можно бесплатно зарабатывать звёзды, мы вывели уже более *250 тысяч звёзд*, посмотри –\n"
-            "[🔗 https://t.me/FreeStard](https://t.me/FreeStard)\n\n"
-            "🎁 *За регистрацию в боте, дарим тебе первую* `1⭐`, *получай больше звёзд этими способами:*\n"
-            "• 🎯 *Выполняй задания*\n"
-            "• 💎 *Забирай ежедневный бонус*\n"
-            "• 👥 *Приглашай друзей по ссылке и получай по* `2⭐` *за каждого, просто отправь её другу:*\n"
-            f"[🔗 https://t.me/FreeStard_bot?start={callback.from_user.id}](https://t.me/FreeStard_bot?start={callback.from_user.id})\n\n"
-            "*Как только заработаешь минимум* `15⭐`, *выводи их в разделе* «💰 *Вывести звёзды*», *мы отправим тебе подарок за выбранное количество звёзд, удачи!*\n\n"
-            )
-        await callback.message.answer(start,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
+        text = await get_config('start_text')
+        user_id = callback.from_user.id
+        formatted_text = text.format(user_id=user_id)
+        await callback.message.answer(formatted_text,parse_mode="Markdown", reply_markup=kb.main, disable_web_page_preview=True)
         await callback.message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
     else:
         await callback.answer("❌ Вы не подписаны на канал! Подпишитесь и попробуйте снова.",show_alert=True)
@@ -359,7 +354,8 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
         for admin_id in ADMIN:
             await bot.send_message(admin_id, message_text)
     else:
-        await callback.answer('Не хватает',show_alert=True)
+        amount = value - user.balance
+        await callback.answer(f'Заработайте еще {amount}⭐, что бы получить подарок!',show_alert=True)
 
 
 
@@ -378,28 +374,12 @@ async def fail_callback(callback: CallbackQuery):
 
 @user.message(F.text == ("test"))
 async def check_admin_handler(message: Message, bot: Bot):
-    chat_id = -1001751157582  # ID канала, на который проверяем подписку
-    user_id = message.from_user.id
-    is_subscribed = await is_user_subscribed(chat_id, user_id, bot)
-    if is_subscribed:
-        print("Пользователь подписан на канал.")
+    text = await get_config('start_text')
+    
+    if text is None:
+        await message.answer("⚠️ В БД нет start_text!", parse_mode='Markdown')
     else:
-        print("Пользователь НЕ подписан на канал.")
-
-from aiogram import Bot
-from aiogram.types import ChatMember
-from aiogram.exceptions import TelegramBadRequest
-async def is_user_subscribed_handler(chat_id: int, user_id: int,bot:Bot) -> bool:
-    try:
-        member: ChatMember = await bot.get_chat_member(chat_id=chat_id, user_id=user_id)
-        print(f"Статус пользователя: {member.status}")
-        # Проверяем статус пользователя
-        return member.status in ['member', 'administrator', 'creator']
-    except TelegramBadRequest:
-        # Если возникла ошибка, значит пользователь не подписан
-        return False
-    
-    
+        await message.answer(f"🔹 Вот что лежит в БД:\n\n{text}", parse_mode='Markdown')
 
 
 

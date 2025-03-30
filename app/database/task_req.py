@@ -90,3 +90,8 @@ async def check_entry_task_history(session,tg_id,task_id):
         return False
     else:
         return True
+    
+
+
+
+    

@@ -166,6 +166,25 @@ async def edit_ref_reward(session, reward):
         config.ref_reward = reward
         await session.commit()
 
+
+
+@connection
+async def edit_start_text(session,text):
+    config = await session.get(Config,1)
+    if config:
+        config.start_text = text
+        await session.commit()
+
+
+@connection
+async def return_start_text(session):
+    config = await session.get(Config,1)
+    if config:
+        config.start_text = txt.start
+        await session.commit()
+
+
+
 @connection 
 async def create_task(session, link, reward, total_completions,chat_id,title, task_type, description=None):
     new_task = Task(
@@ -527,3 +546,21 @@ async def skip_task(session, user_id, task_id):
         return False
     
     
+@connection
+async def set_image_url(session, url):
+    config = await session.scalar(select(Config))
+    config.image_link = url
+    await session.commit()
+
+
+@connection
+async def delete_image_url(session):
+    config = await session.scalar(select(Config))
+    config.image_link = None
+    await session.commit()
+
+@connection
+async def get_image_url(session):
+    config = await session.scalar(select(Config).limit(1))
+    image_url = config.image_link if config else None
+    return image_url
