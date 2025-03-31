@@ -8,6 +8,7 @@ import re
 from app.database.requests import get_config, edit_ref_text, edit_ref_reward
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN
+from aiogram.utils.text_decorations import html_decoration
 
 admin = Router()
 
@@ -35,16 +36,15 @@ async def referal_system(message: Message,state:FSMContext):
 @admin.callback_query(Admin(),F.data == 'edit_ref_text')
 async def edit_text(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer(
-        "✏️ Введите новый текст для реферальной системы.\n\n"
-        "📌 *Используйте разметку Markdown*.\n"
+        "✏️ Введите новый текст для реферальной системы."
     ,parse_mode='Markdown')
     await callback.answer()
     await state.set_state(EditRef.edit_ref_text)
 
 @admin.message(EditRef.edit_ref_text)
 async def process_edit(message: Message, state: FSMContext):
-    text = message.text
-    await edit_ref_text(text)
+    text_with_html = html_decoration.unparse(message.text, message.entities)
+    await edit_ref_text(text_with_html)
     await state.clear()
     await message.answer('✅Текст успешно сохранен')
 

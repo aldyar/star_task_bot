@@ -15,7 +15,7 @@ import os
 IMAGE_DIR = "images"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 from aiogram.types import FSInputFile
-
+from aiogram.utils.text_decorations import html_decoration
 
 admin = Router()
 
@@ -65,7 +65,8 @@ async def reset_text_handler(callback:CallbackQuery):
 
 @admin.message(AdminState.waiting_for_text, F.text)
 async def receive_text(message: Message, state: FSMContext):
-    await state.update_data(text=message.text)
+    text_with_html = html_decoration.unparse(message.text, message.entities)
+    await state.update_data(text=text_with_html)
     print(message.text)
     await preview(message, state)
 
@@ -77,7 +78,8 @@ async def preview(message: Message, state: FSMContext):
         [InlineKeyboardButton(text='✅ Сохранить', callback_data='save')],
         [InlineKeyboardButton(text='❌ Отменить', callback_data='cancel')]
     ])
-    await message.answer(text, parse_mode='Markdown', reply_markup=keyboard)
+    await message.answer(text,parse_mode='HTML',  reply_markup=keyboard)
+
 
 @admin.callback_query(F.data == 'save')
 async def save_changes(callback: CallbackQuery, state: FSMContext):

@@ -10,6 +10,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMark
 from app.database.models import User, Config, Task, TaskCompletion
 from app.database.models import async_session
 from config import ADMIN
+from aiogram.utils.text_decorations import html_decoration
 
 admin = Router()
 
@@ -64,7 +65,7 @@ async def process_link(message: Message, state: FSMContext):
 
 @admin.message(CreateTask.waiting_for_description)
 async def process_describe(message:Message,state:FSMContext):
-    describe = message.text
+    describe = html_decoration.unparse(message.text, message.entities)
     await state.update_data(describe = describe)
     await message.answer("💰 Введите вознаграждение за выполнение (в цифрах):")
     await state.set_state(CreateTask.waiting_for_reward)
@@ -120,15 +121,16 @@ async def process_chat_id(message: Message, state: FSMContext):
         await create_task(link, reward, count, chat_id,title, task_type, describe)
 
         text = f"""
-    ✅ *Задание успешно создано!*
-    📌 *Ссылка:* [{link}]({link})
-    💰 *Вознаграждение:* {reward}
-    📊 *Количество выполнений:* {count}
-    ✉️ *ID канала:* {chat_id}
-    """
+    ✅ <b>Задание успешно создано!</b>
+    📌 <b>Ссылка:</b> <a href="{link}">{link}</a>
+    💰 <b>Вознаграждение:</b> {reward}
+    📊 <b>Количество выполнений:</b> {count}
+    ✉️ <b>ID канала:</b> {chat_id}
+"""
+
         if describe:
-            await message.answer(f"\n📝 *Описание:* {describe}", parse_mode='Markdown')
-        await message.answer(text, parse_mode='Markdown', disable_web_page_preview=True)
+            await message.answer(f"\n📝 Описание: {describe}", parse_mode='HTML')
+        await message.answer(text, parse_mode='HTML', disable_web_page_preview=True)
         await state.clear()
         
     else:
