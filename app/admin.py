@@ -147,19 +147,20 @@ async def show_tasks(callback: CallbackQuery):
         return
 
     for task in tasks:
-        text = f"""
-🔢 *Задание №*{task.id}\n
-📌 *Ссылка:* [{task.link}]({task.link})
-💰 *Вознаграждение:* {task.reward}
-📊 *Лимит выполнений:* {task.total_completions}
-✅ *Выполнено:* {task.completed_count}
-"""
+        text = f"🔢 <b>Задание №{task.id}</b>\n\n"
+        if task.description:
+            text +=f"📋 <b>Описание:</b> {task.description}\n"
+        text +=f'📌 <b>Ссылка:</b> <a href="{task.link}">{task.link}</a>\n'
+        text +=f'💰 <b>Вознаграждение:</b> {task.reward}⭐\n'
+        text +=f'📊 <b>Лимит выполнений:</b> {task.total_completions}\n'
+        text +=f'✅ <b>Выполнено:</b> {task.completed_count}'
+
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(text='✏️ Редактировать', callback_data=f'editindividualtask_{task.id}')]
             ]
         )
-        await callback.message.answer(text, parse_mode='Markdown', reply_markup=keyboard, disable_web_page_preview=True)
+        await callback.message.answer(text, parse_mode='HTML', reply_markup=keyboard, disable_web_page_preview=True)
     await callback.answer()
 
 

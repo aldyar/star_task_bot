@@ -134,59 +134,69 @@ async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
 
 
 @user.callback_query(F.data == 'complete_task')
-async def complete_task_handler(callback:CallbackQuery,bot:Bot,state:FSMContext):
+async def complete_task_handler(callback: CallbackQuery, bot: Bot, state: FSMContext):
     data = await state.get_data()
     task_present = data.get("task")
-    
-    chat_id = task_present.chat_id
-    is_subscribed  = await is_user_subscribed(bot,callback.from_user.id,chat_id)
-    if is_subscribed :
-        copmpleted = await completed_task(task_present.id, callback.from_user.id, task_present.reward)
-        complete_text = (
-                f'*✅ Задание №{task_present.id} выполнено!*\n\n'
-                f'*• {task_present.reward}⭐️ начислено на ваш баланс в боте, не отписывайтесь от канала в течении 7 дней, иначе звёзды будут обнулены!!*'
-                )
-        await callback.message.answer(complete_text,parse_mode='Markdown')
-        if copmpleted:
-            message_text = (f'🎯*Задание под номером  №*{task_present.id} *завершило работу*\n\n'
-                            f'• *Ссылка на задание:* [{task_present.link}]({task_present.link})\n'
-                            f'• *Колличество выполнений:* {task_present.completed_count+1}')
-            for admin_id in ADMIN:
-                await bot.send_message(admin_id, message_text,parse_mode='Markdown', disable_web_page_preview=True)
-        await callback.answer('⭐Вознаграждения зачислено')
-        await create_task_completions_history(callback.from_user.id,task_present.id)
-        await callback.message.delete()
-        task = await get_first_available_task(callback.from_user.id)  # Получаем список доступных заданий
-        await state.update_data(task = task)
 
-        if not task:
-            await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+    if not task_present:
+        await callback.answer("Задание не найдено", show_alert=True)
+        return
+
+    chat_id = task_present.chat_id
+
+    # Проверяем подписку только если задание типа "subscribe"
+    if task_present.type == 'subscribe':
+        is_subscribed = await is_user_subscribed(bot, callback.from_user.id, chat_id)
+        if not is_subscribed:
+            await callback.answer("Вы не подписаны на канал!", show_alert=True)
             return
 
+    # Помечаем задание как выполненное
+    completed = await completed_task(task_present.id, callback.from_user.id, task_present.reward)
 
+    complete_text = (
+        f'*✅ Задание №{task_present.id} выполнено!*\n\n'
+        f'*• {task_present.reward}⭐️ начислено на ваш баланс в боте. Не отписывайтесь от канала в течение 7 дней, иначе звёзды будут обнулены!*'
+    )
+    await callback.message.answer(complete_text, parse_mode='Markdown')
 
-        if task.type == 'subscribe':
-    
-            text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
+    if completed:
+        message_text = (
+            f'🎯 *Задание №{task_present.id} завершено!*\n\n'
+            f'• *Ссылка на задание:* [{task_present.link}]({task_present.link})\n'
+            f'• *Количество выполнений:* {task_present.completed_count + 1}'
+        )
+        for admin_id in ADMIN:
+            await bot.send_message(admin_id, message_text, parse_mode='Markdown', disable_web_page_preview=True)
 
-            if task.description:  # Проверяем, есть ли описание
-                text += f"{task.description}\n\n"
+    await callback.answer('⭐ Вознаграждение зачислено')
+    await create_task_completions_history(callback.from_user.id, task_present.id)
+    await callback.message.delete()
 
-            text += f"• <b>Подпишись на</b> <a href='{task.link}'>{task.link}</a>\n"
-            text += f"• <b>Награда:</b> {task.reward}⭐"
-            keyboard = await kb.complete_task_inline(task.link)
-            await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
-        elif task.type == 'entry':
-            text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
+    # Получаем следующее задание
+    task = await get_first_available_task(callback.from_user.id)
+    await state.update_data(task=task)
 
-            if task.description:  # Проверяем, есть ли описание
-                text += f"{task.description}\n\n"
+    if not task:
+        await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        return
 
-            text += f"• <b>Подай заявку в канал</b> <a href='{task.link}'>{task.link}</a>\n"
-            text += f"• <b>Награда:</b> {task.reward}⭐"
-            await create_task_state(callback.from_user.id,task.id)
-            keyboard = await kb.entry_type_inline(task.link)
-            await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+    # Отправляем новое задание
+    text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
+    if task.description:
+        text += f"{task.description}\n\n"
+
+    if task.type == 'subscribe':
+        text += f"• <b>Подпишись на</b> <a href='{task.link}'>{task.link}</a>\n"
+        text += f"• <b>Награда:</b> {task.reward}⭐"
+        keyboard = await kb.complete_task_inline(task.link)
+    elif task.type == 'entry':
+        text += f"• <b>Подай заявку в канал</b> <a href='{task.link}'>{task.link}</a>\n"
+        text += f"• <b>Награда:</b> {task.reward}⭐"
+        await create_task_state(callback.from_user.id, task.id)
+        keyboard = await kb.entry_type_inline(task.link)
+
+    await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
 
 
 
@@ -354,8 +364,8 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
         await insert_message_id(transaction.id,send_message.message_id)
 
 
-        for admin_id in ADMIN:
-            await bot.send_message(admin_id, message_text)
+        # for admin_id in ADMIN:
+        #     await bot.send_message(admin_id, message_text)
     else:
         amount = value - user.balance
         await callback.answer(f'Заработайте еще {amount}⭐, что бы получить подарок!',show_alert=True)
