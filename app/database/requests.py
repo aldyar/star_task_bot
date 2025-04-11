@@ -367,15 +367,15 @@ async def is_user_subscribed(bot: Bot, user_id: int, chat_id) -> bool:
         
         # Проверяем статус пользователя в чате
         member: ChatMember = await bot.get_chat_member(chat_id=chat_id, user_id=user_id)
-        print(f"Статус пользователя: {member.status}")
+        #print(f"Статус пользователя: {member.status}")
         
         is_subscribed = member.status in ["member", "administrator", "creator"]
-        print(f"Пользователь подписан: {is_subscribed}")
+        #print(f"Пользователь подписан: {is_subscribed}")
         
         return is_subscribed
         
     except TelegramBadRequest as e:
-        print(f"Ошибка при проверке подписки: {e}")
+        #print(f"Ошибка при проверке подписки: {e}")
         return False
     
 

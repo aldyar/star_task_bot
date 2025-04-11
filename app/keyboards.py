@@ -76,7 +76,8 @@ main_admin = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = 'Задани�
                                              KeyboardButton(text = 'Статистика')]], resize_keyboard=True)
 
 tasks_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✅ Создать задание', callback_data='create_task')],
-                                                   [InlineKeyboardButton(text = '✏️ Редактировать задание', callback_data='edit_task')]])
+                                                   [InlineKeyboardButton(text = '✏️ Редактировать задание', callback_data='edit_task')],
+                                                   [InlineKeyboardButton(text = '🗄 Архив заданий', callback_data= 'TaskArchive')]])
 
 referal_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Изменить текст', callback_data='edit_ref_text')],
                                                      [InlineKeyboardButton(text = '⭐️Изменить вознаграждение',callback_data='edit_ref_reward')]])

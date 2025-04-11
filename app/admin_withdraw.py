@@ -8,6 +8,9 @@ from app.database.requests import edit_withdraw_limit, get_pending_transactions,
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN, GROUP_ID
 from aiogram import Bot
+import asyncio
+from aiogram.utils.text_decorations import markdown_decoration as md
+
 
 admin = Router()
 
@@ -87,6 +90,7 @@ async def withdraw_req_handler(callback: CallbackQuery):
 
     if not withdrawals:
         await callback.message.answer("Нет заявок на вывод.")
+        await callback.answer()
         return
 
     for withdrawal in withdrawals:
@@ -98,13 +102,14 @@ async def withdraw_req_handler(callback: CallbackQuery):
 
         message_text = (
             f"📌 *Заявка №{withdrawal.id}*\n"
-            f"👤 *Пользователь:* @{withdrawal.username or 'Не указан'}\n"
+            f"👤 *Пользователь:* {md.quote('@' + (withdrawal.username or 'Не указан'))}\n"
             f"🆔 *TG ID:* `{withdrawal.tg_id}`\n"
             f"💰 *Сумма:* `{withdrawal.amount} ⭐️`\n"
             f"⏳ *Статус:* _Ожидает выполнения_"
         )
 
         await callback.message.answer(message_text, reply_markup=keyboard, parse_mode="Markdown")
+        await asyncio.sleep(0.3)  # защита от FloodWait
 
     await callback.answer()  # Закрываем callback
 

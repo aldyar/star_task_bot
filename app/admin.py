@@ -6,6 +6,7 @@ import app.keyboards as kb
 from app.states import CreateTask, EditTask
 import re
 from app.database.requests import get_all_tasks, get_task, edit_task_reward, edit_task_active, edit_task_total_completion, create_task,get_task_about_taskid
+from app.database.task_req import get_archive_task, activate_task
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMarkup, InlineKeyboardButton
 from app.database.models import User, Config, Task, TaskCompletion
 from app.database.models import async_session
@@ -264,3 +265,71 @@ async def deactivate_task(callback: CallbackQuery):
         await callback.message.answer("❌ Задание не найдено.")
 
     await callback.answer()
+
+
+@admin.callback_query(F.data == 'TaskArchive')
+async def task_archive_handler(callback:CallbackQuery):
+    tasks =await get_archive_task()
+    if not tasks:
+        await callback.message.answer("❌ Нет заданий в архиве.")
+        await callback.answer()
+        return
+
+    for task in tasks:
+        text = f"🔢 <b>Задание №{task.id}</b>\n\n"
+        if task.description:
+            text +=f"📋 <b>Описание:</b> {task.description}\n"
+        text +=f'📌 <b>Ссылка:</b> <a href="{task.link}">{task.link}</a>\n'
+        text +=f'💰 <b>Вознаграждение:</b> {task.reward}⭐\n'
+        text +=f'📊 <b>Лимит выполнений:</b> {task.total_completions}\n'
+        text +=f'✅ <b>Выполнено:</b> {task.completed_count}'
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text='✏️ Редактировать', callback_data=f'EditArchive_{task.id}')]
+            ]
+        )
+        await callback.message.answer(text, parse_mode='HTML', reply_markup=keyboard, disable_web_page_preview=True)
+    await callback.answer()
+
+
+@admin.callback_query(F.data.startswith('EditArchive_'))
+async def edit_task(callback:CallbackQuery, state: FSMContext):
+    task_id = int(callback.data.split('_')[1])
+    task = await get_task_about_taskid(task_id)
+
+    if not task:
+        await callback.message.answer("❌ Задание не найдено.")
+        await callback.answer()
+        return
+
+    await state.update_data(task_id=task_id)
+
+    text = f"""
+📌 **Ссылка:** [{task.link}]({task.link})
+💰 **Вознаграждение:** {task.reward}
+📊 **Лимит выполнений:** {task.total_completions}
+✅ **Выполнено:** {task.completed_count}
+"""
+
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='💰 Изменить вознаграждение', callback_data=f'change_reward_{task_id}')],
+            [InlineKeyboardButton(text='➕ Добавить выполнений', callback_data=f'add_completions_{task_id}')],
+            [InlineKeyboardButton(text='✅ Активировать задание', callback_data=f'activate_{task_id}')]
+        ]
+    )
+
+    await callback.message.answer(text, parse_mode='Markdown', reply_markup=keyboard, disable_web_page_preview=True)
+    await callback.answer()
+
+
+@admin.callback_query(F.data.startswith('activate_'))
+async def activate_task_handler(callback:CallbackQuery):
+    task_id = int(callback.data.split('_')[1])
+    task = await get_task_about_taskid(task_id)
+    if task.total_completions == 0:
+        return await callback.answer('Задание невозможно активировать пока лимит выполнений 0.')
+    await activate_task(task_id)
+    await callback.message.delete()
+    await callback.answer('Задание успешно активировано.')

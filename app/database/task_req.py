@@ -91,7 +91,19 @@ async def check_entry_task_history(session,tg_id,task_id):
     else:
         return True
     
+@connection
+async def get_archive_task(session):
+    tasks = await session.scalars(select(Task).where(Task.is_active == False))
+    if tasks:
+        return tasks
+    
 
+@connection
+async def activate_task(session,task_id):
+    task = await session.scalar(select(Task).where(Task.id == task_id))
+    if task:
+        task.is_active = True
+        await session.commit()
 
 
     
