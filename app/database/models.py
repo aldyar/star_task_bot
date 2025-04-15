@@ -2,6 +2,7 @@ from sqlalchemy import ForeignKey, String, BigInteger, DateTime, Boolean, Float,
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from datetime import datetime
+from sqlalchemy import JSON
 
 
 engine = create_async_engine(url='sqlite+aiosqlite:///db.sqlite3',
@@ -44,8 +45,8 @@ class Config(Base):
     ref_reward: Mapped[float] = mapped_column(Float)
     ref_text: Mapped[str] = mapped_column(String)
     image_link: Mapped[str] = mapped_column(String,nullable=True)
-
-
+    reminder_text: Mapped[str] = mapped_column(String ,nullable=True)
+    reminder_image:Mapped[str] = mapped_column(String,nullable=True)
 class Task(Base):
     __tablename__ = "tasks"
 

@@ -70,8 +70,9 @@ async def withdraw_keyboard():
 #ADMIN KEYBOARDS
 main_admin = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = 'Задание'),
                                             KeyboardButton(text = 'Реферальная система')],
-                                            [KeyboardButton(text = 'Вывод средств'),
-                                             KeyboardButton(text = 'Приветствие')],
+                                            [KeyboardButton(text = 'Вывод средств')],
+                                            [KeyboardButton(text = 'Приветствие'),
+                                            KeyboardButton(text = 'Напоминание')],
                                             [KeyboardButton(text = 'Бонус'),
                                              KeyboardButton(text = 'Статистика')]], resize_keyboard=True)
 
@@ -115,3 +116,5 @@ async def entry_type_inline(link):
 
 next_task_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '🎯Следующее задание',callback_data='task')]])
 
+inline_admin_reminder = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить текст', callback_data='ResetTextReminder')],
+                                                              [InlineKeyboardButton(text = 'Изменить картинку', callback_data= 'ResetImageReminder')]])
