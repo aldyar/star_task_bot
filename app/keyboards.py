@@ -1,7 +1,8 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMarkup, InlineKeyboardButton
 from app.database.requests import get_withdraw_limit,get_task_about_taskid
 main = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = '⭐️Заработать звёзды')],
-                                     [KeyboardButton(text = '🎁Вывести звёзды')],
+                                     [KeyboardButton(text = '🎁Вывести звёзды'),
+                                      KeyboardButton(text = '👤Профиль')],
                                      [KeyboardButton(text = '🎯Задания'),
                                       KeyboardButton(text = '💎Бонус')]],
                                       resize_keyboard=True)
@@ -118,3 +119,8 @@ next_task_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(t
 
 inline_admin_reminder = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить текст', callback_data='ResetTextReminder')],
                                                               [InlineKeyboardButton(text = 'Изменить картинку', callback_data= 'ResetImageReminder')]])
+
+
+inline_user_profile = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '⭐️ Заработать звезды',callback_data='EarnStars'),
+                                                             InlineKeyboardButton(text = '🎯 Задания',callback_data='task')],
+                                                             [InlineKeyboardButton(text = '⬅️В главное меню',callback_data='BackMenu')]])
