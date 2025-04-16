@@ -10,6 +10,7 @@ from app.admin_start import admin as admin_start
 from app.admin_reminder import admin as admin_reminder
 from app.user import user
 from app.user_profile import user as user_profile
+from app.user_top import user as user_top
 from app.database.models import async_main
 from app.database.requests import create_config,check_subscriptions
 #from app.middleware import SubscriptionMiddleware  # Импорт мидлвара
@@ -23,7 +24,8 @@ async def main():
     #dp.callback_query.middleware(SubscriptionMiddleware(bot, CHANNEL_LINK))
 
     # Регистрация роутеров
-    dp.include_routers(admin_router, admin_ref_router, admin_withdraw, admin_bonus, admin_stat,admin_start ,admin_reminder, user, user_profile)
+    dp.include_routers(admin_router, admin_ref_router, admin_withdraw, admin_bonus, admin_stat,admin_start ,admin_reminder, 
+                       user, user_profile, user_top)
     dp.startup.register(on_startup)
 
     await dp.start_polling(bot)
@@ -31,7 +33,7 @@ async def main():
 async def on_startup(bot:Bot):
     await async_main()
     await create_config() 
-    asyncio.create_task(check_subscriptions(bot))
+    #asyncio.create_task(check_subscriptions(bot))
 
     
 if __name__ == '__main__':

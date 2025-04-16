@@ -20,6 +20,11 @@ from app.admin import start_admin
 from aiogram import types
 from aiogram.types import FSInputFile
 
+image_start = 'images\image_start.jpg'
+image_ref = 'images\image_ref.jpg'
+image_withdraw = 'images\image_withdraw.jpg'
+image_welcome = 'images\image_welcome.jpg'
+image_task = 'images\image_task.jpg'
 
 
 @user.message(CommandStart())
@@ -38,30 +43,34 @@ async def cmd_start(message: Message, state: FSMContext):
         "1️⃣ Подпишись на <a href='https://t.me/FreeStard'>канал</a>\n\n"
         f"2️⃣ Нажми на {emoji} ниже, чтобы начать пользоваться ботом и получать звёзды, "
         "после прохождения начислим тебе 1⭐ на баланс бота:")
-    await message.answer(text, reply_markup=captcha, parse_mode="HTML", disable_web_page_preview=True)
+    photo = FSInputFile(image_welcome)
+    await message.answer_photo(photo,caption=text, reply_markup=captcha, parse_mode="HTML", disable_web_page_preview=True)
 
 
 async def success_message(message: Message):
     text = await get_config('start_text')
-    image_url = await get_config('image_link')  # Получаем ссылку на изображение
+    #image_url = await get_config('image_link')  # Получаем ссылку на изображение
 
 
     user_id = message.from_user.id
     formatted_text = text.format(user_id=user_id)
-
-    if image_url:
-        photo = FSInputFile(image_url)
-        await message.answer_photo(photo, caption=formatted_text, parse_mode="HTML", reply_markup=kb.main)
-    else:
-        await message.answer(formatted_text, parse_mode="HTML", reply_markup=kb.main,disable_web_page_preview=True)
+    photo = FSInputFile(image_start)
+    await message.answer_photo(photo, caption=formatted_text, parse_mode="HTML", reply_markup=kb.main)
     await message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
+
+    # if image_url:
+    #     photo = FSInputFile(image_start)
+    #     await message.answer_photo(photo, caption=formatted_text, parse_mode="HTML", reply_markup=kb.main)
+    # else:
+    #     await message.answer(formatted_text, parse_mode="HTML", reply_markup=kb.main,disable_web_page_preview=True)
+    # await message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
 
 
 
 @user.message(F.text == '🎯Задания')
 async def get_task_hander(message: Message,state: FSMContext):
     task = await get_first_available_task(message.from_user.id)  # Получаем список доступных заданий
-
+    photo =FSInputFile(image_task)
     if not task:
         await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
         return
@@ -75,7 +84,7 @@ async def get_task_hander(message: Message,state: FSMContext):
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await state.update_data(task = task)
         reward = await count_reward(message.from_user.id)
-        await message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+        await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.complete_task_inline(task.link)
         await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
@@ -90,7 +99,7 @@ async def get_task_hander(message: Message,state: FSMContext):
         await state.update_data(task = task)
         await create_task_state(message.from_user.id,task.id)
         reward = await count_reward(message.from_user.id)
-        await message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+        await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.entry_type_inline(task.link)
         await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
@@ -258,6 +267,7 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
 
     if not task:
         await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        await callback.answer()
         return
     if task.type == 'subscribe':
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
@@ -310,9 +320,8 @@ async def ref_system(message: Message):
     f"🗣 <b>Вы пригласили:</b> {user.referral_count}"
 )
 
-
-
-    await message.answer(text, disable_web_page_preview=True, parse_mode='HTML')
+    photo = FSInputFile(image_ref)
+    await message.answer_photo(photo,caption=text, disable_web_page_preview=True, parse_mode='HTML')
 
 
 @user.message(F.text == '🎁Вывести звёзды')
@@ -323,7 +332,8 @@ async def withdraw(message:Message):
         f"*Заработано: {user.balance}⭐️*\n\n"
         '*🔻 Выбери, подарок за сколько звёзд хочешь получить:*'
     )
-    await message.answer(text, parse_mode='Markdown', reply_markup=keyboard)
+    photo = FSInputFile(image_withdraw)
+    await message.answer_photo(photo,caption=text, parse_mode='Markdown', reply_markup=keyboard)
 
 
 
