@@ -120,7 +120,8 @@ async def entry_type_inline(link):
 next_task_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '🎯Следующее задание',callback_data='task')]])
 
 inline_admin_reminder = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить текст', callback_data='ResetTextReminder')],
-                                                              [InlineKeyboardButton(text = 'Изменить картинку', callback_data= 'ResetImageReminder')]])
+                                                              [InlineKeyboardButton(text = 'Изменить картинку', callback_data= 'ResetImageReminder')],
+                                                              [InlineKeyboardButton(text = 'Опубликовать',callback_data='SendReminder')]])
 
 
 inline_user_profile = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '⭐️ Заработать звезды',callback_data='EarnStars'),

@@ -16,6 +16,9 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 from aiogram import Bot
 from aiogram.types import FSInputFile
 from aiogram.utils.text_decorations import html_decoration
+from app.database.user_req import UserFunction as User
+from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError
+import asyncio
 
 
 admin = Router()
@@ -162,3 +165,50 @@ async def delete_image(callback: CallbackQuery):
         await callback.message.answer("У вас нет сохраненного изображения.")
 
     await callback.answer()
+
+
+@admin.callback_query(Admin(),F.data == 'SendReminder')
+async def send_reminder(callback:CallbackQuery, bot: Bot):
+    await callback.answer()
+    users = await User.get_all_users()
+    user_ids = [user.tg_id for user in users]
+    text = await Reminder.get_config_reminder_text()
+    image_url = await Reminder.get_config_reminder_image()        
+    total_users = len(user_ids)
+    success_count = 0
+    blocked_count = 0
+    failed_count = 0
+
+    await callback.message.answer(f"📢 Начинаю рассылку... Количество пользователей: {total_users}")
+
+    for user_id in user_ids:
+        try:
+            if image_url:
+                photo = FSInputFile(image_url)
+                await bot.send_photo(
+                    user_id,
+                    photo=photo,
+                    caption=text,
+                    parse_mode="HTML"
+                )
+            else:
+                await bot.send_message(
+                    user_id,
+                    text,
+                    parse_mode="HTML"
+                )
+            success_count += 1
+        except TelegramForbiddenError:  # Пользователь заблокировал бота
+            blocked_count += 1
+        except TelegramAPIError as e:  # Любая другая ошибка
+            failed_count += 1
+            print(f"Ошибка отправки {user_id}: {e}")
+        
+        await asyncio.sleep(0.3)  # Задержка, чтобы избежать блокировки
+
+    await callback.message.answer(
+        f"✅ Рассылка завершена!\n\n"
+        f"📬 Успешно доставлено: {success_count}\n"
+        f"🚫 Пользователей заблокировали бота: {blocked_count}\n"
+        f"❌ Ошибки: {failed_count}"
+    )

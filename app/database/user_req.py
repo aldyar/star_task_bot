@@ -101,3 +101,8 @@ class UserFunction:
          )
 
         return count
+    
+    @connection
+    async def get_all_users(session):
+        users = await session.scalars(select(User))
+        return users.all()
