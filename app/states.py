@@ -26,6 +26,8 @@ class EditBonus(StatesGroup):
 class Date(StatesGroup):
     first_date = State()
     second_date = State()
+    first_ddate = State()
+    second_ddate = State()
 
 class Reminder(StatesGroup):
     wait_text = State()

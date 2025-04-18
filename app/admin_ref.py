@@ -25,12 +25,12 @@ async def referal_system(message: Message,state:FSMContext):
     reward = await get_config('ref_reward')
 
     message_text = (
-        '*Ваш текст:*\n\n'
+        '<b>Ваш текст:</b>\n\n'
         f'{text}\n\n'
-        f'*Сумма вознаграждения: {reward}*'
+        f'<b>Сумма вознаграждения: {reward}</b>'
     )
 
-    await message.answer(message_text,parse_mode='Markdown',reply_markup=kb.referal_menu)
+    await message.answer(message_text,parse_mode='HTML',reply_markup=kb.referal_menu)
 
 
 @admin.callback_query(Admin(),F.data == 'edit_ref_text')

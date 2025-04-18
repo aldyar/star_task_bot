@@ -8,6 +8,7 @@ from sqlalchemy import and_,func
 from aiogram import Bot
 from aiogram.types import ChatMember
 from aiogram.exceptions import TelegramBadRequest
+from sqlalchemy.orm import aliased
 
 
 def connection(func):
@@ -247,8 +248,8 @@ async def get_all_users_date(session, date_1, date_2):
     # Запрос к БД с фильтрацией по дате регистрации
     query = select(User).where(
         and_(
-            User.registration_date >= date_1_obj,
-            User.registration_date <= date_2_obj
+            User.register_date >= date_1_obj,
+            User.register_date <= date_2_obj
         )
     )
     
@@ -256,6 +257,37 @@ async def get_all_users_date(session, date_1, date_2):
     users = result.scalars().all()
     return users
 
+
+@connection
+async def get_top_referrers_by_date(session, date_from, date_to):
+    """
+    Возвращает список пользователей, которые пригласили хотя бы 1 пользователя 
+    в заданном промежутке дат, используя только tg_id.
+    """
+    date_1_obj = datetime.strptime(date_from, '%d-%m-%Y')
+    date_2_obj = datetime.strptime(date_to, '%d-%m-%Y')
+    Invited = aliased(User)  # пользователи, которые были приглашены
+
+    stmt = (
+        select(
+            User.tg_id,
+            User.username,
+            func.count(Invited.id).label("invited_count")
+        )
+        .join(Invited, Invited.referrer_id == User.tg_id)
+        .where(
+            Invited.register_date >= date_1_obj,
+            Invited.register_date <= date_2_obj
+        )
+        .group_by(User.tg_id, User.username)
+        .having(func.count(Invited.id) > 0)
+        .order_by(func.count(Invited.id).desc())
+    )
+
+    result = await session.execute(stmt)
+    data = result.all()
+    return data
+    
 
 @connection
 async def create_transaction(session,tg_id, amount):

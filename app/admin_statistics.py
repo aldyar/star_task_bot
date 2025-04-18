@@ -4,7 +4,7 @@ from aiogram.filters import Filter, Command, CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.states import Date
-from app.database.requests import get_today_users, get_all_users, get_all_users_date
+from app.database.requests import get_today_users, get_all_users, get_all_users_date,get_top_referrers_by_date
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN
 from datetime import datetime
@@ -48,8 +48,10 @@ async def statistics_handler(message: Message, state: FSMContext):
         
         await message.answer(user_info,parse_mode='Markdown')
 
-@admin.callback_query(Admin(), F.data == 'num_date')
+@admin.callback_query(Admin(), F.data.startswith('NumDate_'))
 async def num_date_handler(callback: CallbackQuery, state: FSMContext):
+    type = callback.data.removeprefix("NumDate_")
+    await state.update_data(type=type) 
     today_date = datetime.now().strftime('%d-%m-%Y')
     
     text = (
@@ -83,7 +85,7 @@ async def process_second_date_handler(message:Message,state: FSMContext):
     # Теперь получаем сохранённые данные из состояния
     data = await state.get_data()
     date_1 = data.get("date_1")
-    get_all_users_date(date_1, date_2)
+    type = data.get("type")
     # Ответ с подтверждением
     await message.answer(
         f"✅ Вы ввели даты:\n\n"
@@ -91,20 +93,34 @@ async def process_second_date_handler(message:Message,state: FSMContext):
         f"📅 Вторая дата: `{date_2}`",
         parse_mode='Markdown'
     )
-    users = await get_all_users()
-    for user in users:
-        username = user.username if user.username else "Не указан"
-        referrer_id = user.referrer_id if user.referrer_id else "Нет"
+    #users = await get_all_users()
+    if type == 'reg':
+        users = await get_all_users_date(date_1, date_2)
+        for user in users:
+            username = user.username if user.username else "Не указан"
+            referrer_id = user.referrer_id if user.referrer_id else "Нет"
+            
+            user_info = (
+                f"👤 Username: @{username}\n"
+                f"🆔 Telegram ID: {user.tg_id}\n"
+                f"📲 Referrer ID: {referrer_id}\n"
+                f"📊 Приглашенных: {user.referral_count}"
+            )
+            
+            await message.answer(user_info, parse_mode='Markdown')
+        # Сбрасываем состояние после завершения
+    elif type == 'ref':
+        result = await get_top_referrers_by_date(date_1, date_2)
+        response_text = f"🏆 Топ рефов с {date_1.replace('-', '.')} по {date_2.replace('-', '.')}:\n\n"
         
-        user_info = (
-            f"👤 Username: `{username}`\n"
-            f"🆔 Telegram ID: {user.tg_id}\n"
-            f"📲 Referrer ID: {referrer_id}\n"
-            f"📊 Приглашенных: {user.referral_count}"
-        )
-        
-        await message.answer(user_info, parse_mode='Markdown')
-    # Сбрасываем состояние после завершения
+        if result:
+            for row in result:
+                display_name = f"@{row[1]}" if row[1] else f"ID: {row[0]}"
+                response_text += f"{display_name} — {row[2]} приглашений\n"
+        else:
+            response_text += "Нет рефералов в этом промежутке."
+
+        await message.answer(response_text)
     await state.clear()
 
 

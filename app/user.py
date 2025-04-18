@@ -319,9 +319,10 @@ async def ref_system(message: Message):
     "• <b>Распространяй ссылку в соцсетях: TikTok, Instagram, WhatsApp и других</b> 🌐\n\n"
     f"🗣 <b>Вы пригласили:</b> {user.referral_count}"
 )
+    formatted_text = change_text.format(referral_link=referral_link)
 
     photo = FSInputFile(image_ref)
-    await message.answer_photo(photo,caption=text, disable_web_page_preview=True, parse_mode='HTML')
+    await message.answer_photo(photo,caption=formatted_text, disable_web_page_preview=True, parse_mode='HTML')
 
 
 @user.message(F.text == '🎁Вывести звёзды')
@@ -393,16 +394,23 @@ async def fail_callback(callback: CallbackQuery):
 ###########################################################################################################################
 ###########################################################################################################################
 
+# from app.database.requests import get_top_referrers_by_date
 
-
-@user.message(F.text == ("test"))
-async def check_admin_handler(message: Message, bot: Bot):
-    text = await get_config('start_text')
+# @user.message(F.text == ("test"))
+# async def check_admin_handler(message: Message, bot: Bot):
+#     date_from = "10-04-2025"
+#     date_to = "18-04-2025"
+#     result = await get_top_referrers_by_date(date_from, date_to)
+#     response_text = f"🏆 Топ рефов с {date_from.replace('-', '.')} по {date_to.replace('-', '.')}:\n\n"
     
-    if text is None:
-        await message.answer("⚠️ В БД нет start_text!", parse_mode='Markdown')
-    else:
-        await message.answer(f"🔹 Вот что лежит в БД:\n\n{text}", parse_mode='Markdown')
+#     if result:
+#         for row in result:
+#             display_name = f"@{row[1]}" if row[1] else f"ID: {row[0]}"
+#             response_text += f"{display_name} — {row[2]} приглашений\n"
+#     else:
+#         response_text += "Нет рефералов в этом промежутке."
+
+#     await message.answer(response_text)
 
 
 

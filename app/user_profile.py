@@ -12,6 +12,9 @@ from aiogram import Bot
 import random
 from app.database.user_req import UserFunction as User
 from app.user import success_message,ref_system
+from aiogram.types import FSInputFile
+
+image_stat = 'images\image_stat.jpg'
 
 user = Router()
 
@@ -33,6 +36,7 @@ async def user_profile_handler(message:Message):
 ──────────────
 📜 Реферальный список:
 """
+    photo = FSInputFile(image_stat)
     # Если у пользователя есть рефералы
     if referrals:
         # Для каждого реферала формируем строку
@@ -40,7 +44,7 @@ async def user_profile_handler(message:Message):
         text += referral_list
     else:
         text += "Нет приглашённых пользователей."
-    await message.answer(text,reply_markup=kb.inline_user_profile)
+    await message.answer_photo(photo,caption=text,reply_markup=kb.inline_user_profile)
 
 @user.callback_query(F.data =='BackMenu')
 async def back_user_handler(callback:CallbackQuery):

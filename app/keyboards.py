@@ -103,7 +103,8 @@ async def withdraw_edit_req():
 
 edit_bonus = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить',callback_data='editbonus')]])
 
-stat_edit = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Сортировать по дате',callback_data='num_date')]])
+stat_edit = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Сортировать по дате(Регистрация)',callback_data='NumDate_reg')],
+                                                  [InlineKeyboardButton(text = '✏️Сортировать по дате(Количество привлеченных)',callback_data='NumDate_ref')]])
 
 inline_task_type = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Подписка',callback_data= 'subscribe')],
                                                          [InlineKeyboardButton(text = 'Заявка', callback_data = 'entry')]])
