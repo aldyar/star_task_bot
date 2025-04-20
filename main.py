@@ -8,13 +8,14 @@ from app.admin_bonus import admin as admin_bonus
 from app.admin_statistics import admin as admin_stat
 from app.admin_start import admin as admin_start
 from app.admin_reminder import admin as admin_reminder
+from app.admin_event import admin as admin_event
 from app.user import user
 from app.user_profile import user as user_profile
 from app.user_top import user as user_top
 from app.database.models import async_main
 from app.database.requests import create_config,check_subscriptions
 #from app.middleware import SubscriptionMiddleware  # Импорт мидлвара
-
+from app.database.asyncio_task import event_watcher
 async def main():
     bot = Bot(token=TOKEN)
     dp = Dispatcher()
@@ -24,7 +25,7 @@ async def main():
     #dp.callback_query.middleware(SubscriptionMiddleware(bot, CHANNEL_LINK))
 
     # Регистрация роутеров
-    dp.include_routers(admin_router, admin_ref_router, admin_withdraw, admin_bonus, admin_stat,admin_start ,admin_reminder, 
+    dp.include_routers(admin_router, admin_ref_router, admin_withdraw, admin_bonus, admin_stat,admin_start ,admin_reminder,admin_event, 
                        user, user_profile, user_top)
     dp.startup.register(on_startup)
 
@@ -33,7 +34,8 @@ async def main():
 async def on_startup(bot:Bot):
     await async_main()
     await create_config() 
-    #asyncio.create_task(check_subscriptions(bot))
+    asyncio.create_task(check_subscriptions(bot))
+    asyncio.create_task(event_watcher(bot))
 
     
 if __name__ == '__main__':

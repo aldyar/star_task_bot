@@ -510,8 +510,6 @@ async def check_subscriptions(session, bot: Bot):
                         await session.commit()"""
         except Exception as e:
             print(f"Ошибка при выполнении запроса к БД: {e}")
-
-        print(f"--- Проверка подписок завершена. Ожидание 24 часа. ---")
         await asyncio.sleep(3)
 
 

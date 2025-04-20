@@ -72,7 +72,8 @@ async def withdraw_keyboard():
 #ADMIN KEYBOARDS
 main_admin = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = 'Задание'),
                                             KeyboardButton(text = 'Реферальная система')],
-                                            [KeyboardButton(text = 'Вывод средств')],
+                                            [KeyboardButton(text = 'Вывод средств'),
+                                             KeyboardButton(text = 'Конкурс')],
                                             [KeyboardButton(text = 'Приветствие'),
                                             KeyboardButton(text = 'Напоминание')],
                                             [KeyboardButton(text = 'Бонус'),
@@ -130,3 +131,19 @@ inline_user_profile = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButto
 
 inline_user_top = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '📅 Топ за неделю',callback_data='TopWeek')],
                                                         [InlineKeyboardButton(text = '📅 Топ за месяц',callback_data='TopMonth')]])
+
+
+inline_admin_event = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Создать конкурс',callback_data='CreateEvent')],
+                                                           [InlineKeyboardButton(text = 'Активный конкрус',callback_data='ActiveEvent')]])
+
+inline_type_event = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Конкурса N1',callback_data='Event_1')],
+                                                          [InlineKeyboardButton(text = 'Конкурса N2',callback_data='Event_2')],
+                                                          [InlineKeyboardButton(text = 'Конкурса N3',callback_data='Event_3')],
+                                                          [InlineKeyboardButton(text = 'Конкурса N4',callback_data='Event_4')]])
+
+inline_save_or_delete_event = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Сохранить',callback_data='EventSave')],
+                                                                    [InlineKeyboardButton(text = 'Не сохранять',callback_data='EventDontSave')]])
+
+async def inline_join_event(event_id):
+    inline_join_event = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Участвовать',callback_data=f'eventjoin_{event_id}')]])
+    return inline_join_event

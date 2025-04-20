@@ -26,9 +26,20 @@ class EditBonus(StatesGroup):
 class Date(StatesGroup):
     first_date = State()
     second_date = State()
-    first_ddate = State()
-    second_ddate = State()
 
 class Reminder(StatesGroup):
     wait_text = State()
     wait_image = State()
+
+class Event(StatesGroup):
+    wait_c1 = State()
+    wait_c2 = State()
+    wait_c3 = State()
+    wait_c4 = State()
+    wait_c5 = State()
+    wait_c6 = State()
+    wait_rule = State()
+    wait_text = State()
+    wait_image = State()
+    end_date = State()
+    

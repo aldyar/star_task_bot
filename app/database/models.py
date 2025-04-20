@@ -47,6 +47,8 @@ class Config(Base):
     image_link: Mapped[str] = mapped_column(String,nullable=True)
     reminder_text: Mapped[str] = mapped_column(String ,nullable=True)
     reminder_image:Mapped[str] = mapped_column(String,nullable=True)
+
+
 class Task(Base):
     __tablename__ = "tasks"
 
@@ -99,6 +101,25 @@ class TaskState(Base):
     task_id: Mapped[int] = mapped_column(Integer, nullable=False)
     chat_id: Mapped[int] = mapped_column(Integer,nullable=True)
 
+class Event(Base):
+    __tablename__ = 'events'  
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    type: Mapped[str] = mapped_column(String,nullable=True)
+    c1: Mapped[int] = mapped_column(Integer,nullable=True)
+    c2: Mapped[int] = mapped_column(Integer,nullable=True)
+    c3: Mapped[int] = mapped_column(Integer,nullable=True)
+    c4: Mapped[int] = mapped_column(Integer,nullable=True)
+    c5: Mapped[int] = mapped_column(Integer,nullable=True)
+    c6: Mapped[int] = mapped_column(Integer,nullable=True)
+    rules: Mapped[int] = mapped_column(Integer,nullable=True)
+    text: Mapped[str] = mapped_column(String)
+    image: Mapped[str] = mapped_column(String,nullable=True)
+    message_id: Mapped[int] = mapped_column(Integer,nullable=True)
+    start_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)  
+    end_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)  
+    participants: Mapped[str] = mapped_column(String, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean,default=True)
 
 async def async_main():
     async with engine.begin() as conn:
