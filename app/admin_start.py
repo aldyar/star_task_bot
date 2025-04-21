@@ -3,7 +3,6 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Filter, Command, CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
-from app.states import EditRef
 import re
 from app.database.requests import (get_config, edit_ref_text, edit_ref_reward, edit_start_text,return_start_text, 
                                    set_image_url, delete_image_url,get_image_url)
@@ -16,6 +15,8 @@ IMAGE_DIR = "images"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 from aiogram.types import FSInputFile
 from aiogram.utils.text_decorations import html_decoration
+from app.database.channel_req import StartChannelFunction as Channel
+from app.states import StartChannel
 
 admin = Router()
 
@@ -39,7 +40,8 @@ async def start_setting(message: Message, state: FSMContext):
     await state.clear()
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='Изменить текст', callback_data='editstarttext')],
-        [InlineKeyboardButton(text='Изменить картинку', callback_data='editimage')]
+        [InlineKeyboardButton(text='Изменить картинку', callback_data='editimage')],
+        [InlineKeyboardButton(text = 'Каналы',callback_data='StartChannel')]
     ])
     await message.answer('*Выберите что хотите поменять:*', parse_mode='Markdown', reply_markup=keyboard)
 
@@ -180,7 +182,76 @@ async def delete_image(callback: CallbackQuery):
     await callback.answer()
 
 
-# @admin.message(F.photo)
-# async def debug_photo(message: Message):
-#     print("Фото получено!")
-#     await message.answer("Фото обработано!")
+@admin.callback_query(F.data == 'StartChannel')
+async def start_channel_handler(callback:CallbackQuery):
+    channels = await Channel.get_channels()
+    await callback.message.delete()
+    if channels == False:
+        text = "*Вы не добавили ни один канал*"
+        
+        return await callback.message.answer(text,parse_mode='Markdown',reply_markup=kb.inline_admin_start_channel)
+    
+    text = "*📢 Список каналов:*\n\n"
+    for i, channel in enumerate(channels, start=1):
+        text += f"{i}. {channel.title}\n"
+    await callback.message.answer(text,parse_mode='Markdown',reply_markup=kb.inline_admin_start_channel)
+
+
+@admin.callback_query(F.data == 'AddStartChannel')
+async def add_start_channel_handler(callback:CallbackQuery,state:FSMContext):
+    await callback.message.answer(
+        "📌 Введите ссылку на задание в формате `https://t.me/...`", parse_mode='Markdown', disable_web_page_preview=True)
+    await callback.answer()
+    await state.set_state(StartChannel.link)
+
+
+@admin.message(StartChannel.link)
+async def wait_link_handler(message:Message,state:FSMContext):
+    link = message.text.strip()
+    await state.update_data(link=link)
+    await message.answer('*Перешлите пожалуйста любое сообщение из канала*',parse_mode='Markdown')
+    await state.set_state(StartChannel.chat_id)
+
+
+@admin.message(StartChannel.chat_id)
+async def wait_for_chat_id(message:Message,state:FSMContext,bot:Bot):
+    if message.forward_from_chat:  # Проверяем, что сообщение переслано из чата или канала
+        data = await state.get_data()
+        link = data['link'] 
+        chat_id = message.forward_from_chat.id
+        title =  message.forward_from_chat.title
+        admin = await Channel.is_bot_admin(bot,chat_id)
+        if not admin:
+            return await message.answer('*Бот не добавлен в список администраторов*\n\n'
+            '*Добавьте бота в администраторы и перешлите любое сообщение*', parse_mode='Markdown')
+        await Channel.set_channels(chat_id,title,link)
+        await message.answer('*✅Канал успешно добавлен*', parse_mode='Markdown')
+        await state.clear()
+    else:
+        await message.answer("Пожалуйста, перешли сообщение из канала.")
+
+
+@admin.callback_query(F.data == 'DeleteStartChannel')
+async def delete_channel_handler(callback:CallbackQuery,state:FSMContext):
+    channels = await Channel.get_channels()
+    if channels == False:
+        return await callback.answer('Нет каналов на удаление')
+    text = '*📢 Выберите канал который хотите удалить*'
+    buttons = [
+        [InlineKeyboardButton(text=channel.title, callback_data=f"StartChannel_{channel.id}")]
+        for channel in channels
+    ]
+
+    # Создаем клавиатуру правильно
+    markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await callback.message.answer(text, reply_markup=markup, parse_mode="Markdown")
+    await callback.message.delete()
+
+
+@admin.callback_query(F.data.startswith('StartChannel_'))
+async def delete_channel_process_handler(callback:CallbackQuery):
+    id = callback.data.removeprefix("StartChannel_")
+    await Channel.delete_channel(id)
+    await callback.answer('Канал успешно удален')
+    await callback.message.delete()
+    

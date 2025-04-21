@@ -121,6 +121,13 @@ class Event(Base):
     participants: Mapped[str] = mapped_column(String, nullable=True)
     active: Mapped[bool] = mapped_column(Boolean,default=True)
 
+class StartChannel(Base):
+    __tablename__ = 'start_channels'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(Integer,nullable=True)
+    title: Mapped[str] = mapped_column(String,nullable=True)    
+    link: Mapped[str] = mapped_column(String, nullable=True)
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

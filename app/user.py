@@ -20,6 +20,8 @@ from app.admin import start_admin
 from aiogram import types
 from aiogram.types import FSInputFile
 import asyncio
+from app.database.channel_req import StartChannelFunction as Channel
+
 
 image_start = 'images\image_start.jpg'
 image_ref = 'images\image_ref.jpg'
@@ -42,10 +44,19 @@ async def cmd_start(message: Message, state: FSMContext):
         referrer_id = int(message.text.split(maxsplit=1)[1])
         await state.update_data(referrer_id=referrer_id)
     emoji, captcha = random.choice(kb.captchas)  # Выбираем случайную капчу
-    text = ("🤖 <b>Капча</b>\n\n"
-        "1️⃣ Подпишись на <a href='https://t.me/FreeStard'>канал</a>\n\n"
-        f"2️⃣ Нажми на {emoji} ниже, чтобы начать пользоваться ботом и получать звёзды, "
-        "после прохождения начислим тебе 1⭐ на баланс бота:")
+    channels = await Channel.get_channels()
+    text = (
+    "🤖 <b>Капча</b>\n\n"
+    "🔵 Подпишись на <a href='https://t.me/FreeStard'>канал</a>\n\n"
+)
+    if channels:
+        for channel in channels:
+            text += f"🔵 Подпишись на <a href='{channel.link}'>канал</a>\n"
+        text += "\n"  # добавим отступ перед финальной частью
+    text += (
+    f"🔵 Нажми на {emoji} ниже, чтобы начать пользоваться ботом и получать звёзды,\n"
+    "после прохождения начислим тебе 1⭐ на баланс бота:"
+)
     photo = FSInputFile(image_welcome)
     await message.answer_photo(photo,caption=text, reply_markup=captcha, parse_mode="HTML", disable_web_page_preview=True)
 
@@ -280,7 +291,8 @@ async def bonus(message: Message):
 @user.callback_query(F.data == 'accsess')
 async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot):
     subscribed = await is_user_subscribed(bot,callback.from_user.id,CHANNEL_ID)
-    if subscribed:
+    start_channel_subscribed = await Channel.is_user_subscribed(bot,callback.from_user.id)
+    if subscribed and start_channel_subscribed:
         data = await state.get_data()
         referrer_id = data.get("referrer_id")
         await callback.answer("✅ Верно! Доступ разрешен.")
@@ -291,7 +303,8 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
         text = await get_config('start_text')
         image_url = await get_config('image_link')  # Получаем ссылку на изображение
         user_id = callback.from_user.id
-        formatted_text = text.format(user_id=user_id)
+        referral_link = f"https://t.me/FreeStard_bot?start={user_id}"
+        formatted_text = text.format(user_id=user_id,referral_link=referral_link)
         if image_url:
             photo = FSInputFile(image_url)
             await callback.message.answer_photo(photo, caption=formatted_text, parse_mode="HTML", reply_markup=kb.main)

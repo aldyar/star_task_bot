@@ -360,3 +360,8 @@ async def activate_task_handler(callback:CallbackQuery):
     await activate_task(task_id)
     await callback.message.delete()
     await callback.answer('Задание успешно активировано.')
+
+
+
+
+    

@@ -43,3 +43,6 @@ class Event(StatesGroup):
     wait_image = State()
     end_date = State()
     
+class StartChannel(StatesGroup):
+    link = State()
+    chat_id = State()

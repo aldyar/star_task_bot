@@ -70,10 +70,10 @@ async def withdraw_keyboard():
 
 
 #ADMIN KEYBOARDS
-main_admin = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = 'Задание'),
-                                            KeyboardButton(text = 'Реферальная система')],
-                                            [KeyboardButton(text = 'Вывод средств'),
-                                             KeyboardButton(text = 'Конкурс')],
+main_admin = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = '🔵	Задание'),
+                                            KeyboardButton(text = '⏺	Реферальная система')],
+                                            [KeyboardButton(text = ' 🟢 Вывод средств'),
+                                             KeyboardButton(text = '🟦 🟥 🟩 🟨Конкурс')],
                                             [KeyboardButton(text = 'Приветствие'),
                                             KeyboardButton(text = 'Напоминание')],
                                             [KeyboardButton(text = 'Бонус'),
@@ -148,3 +148,7 @@ inline_save_or_delete_event = InlineKeyboardMarkup(inline_keyboard=[[InlineKeybo
 async def inline_join_event(event_id):
     inline_join_event = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Участвовать',callback_data=f'eventjoin_{event_id}')]])
     return inline_join_event
+
+inline_admin_start_channel = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Добавить канал',callback_data='AddStartChannel')],
+                                                                   [InlineKeyboardButton(text = 'Удалить канал',callback_data='DeleteStartChannel')]])
+
