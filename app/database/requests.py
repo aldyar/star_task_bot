@@ -188,6 +188,9 @@ async def return_start_text(session):
 
 @connection 
 async def create_task(session, link, reward, total_completions,chat_id,title, task_type, description=None):
+    # if chat_id is None and title is None:
+    #     chat_id = None
+    #     title = None
     new_task = Task(
         link=link,
         reward=reward,
@@ -467,7 +470,8 @@ async def check_subscriptions(session, bot: Bot):
                 if not task:
                     #print(f"Задание с ID {task_completion.task_id} не найдено.")
                     continue
-                
+                elif task.type == 'BotEntry':
+                    continue
                 #print(f"\nПроверка пользователя {user_id} на подписку на канал {task.link}")
 
                 try:
@@ -523,7 +527,9 @@ async def create_task_completions_history(session,tg_id, task_id):
     new_task_history = TaskHistory(
         tg_id = tg_id,
         task_id = task_id,
-        chat_id = task.chat_id
+        chat_id = task.chat_id if task.chat_id is not None else 7777777
+
+
     )
     session.add(new_task_history)
     session.add(new_task_comp)

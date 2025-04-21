@@ -72,6 +72,7 @@ async def type_event_handler(callback:CallbackQuery,state:FSMContext):
         await callback.message.answer(text)
 
     await state.set_state(Event.wait_c1)
+    await callback.answer()
 
 
 @admin.message(Event.wait_c1)
@@ -281,7 +282,7 @@ async def save_event(callback:CallbackQuery,state:FSMContext):
     date = data.get("end_date")
     end_date = datetime.strptime(date, "%d-%m-%Y")
     if type == '4':
-        await EventFunction.create_event(c1,c2,type,rule,text,image,end_date)
+        await EventFunction.create_event(c1,c2,None,None,None,None,type,rule,text,image,end_date)
     else:
         c3 = data.get("c3")
         c4 = data.get("c4")

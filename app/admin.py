@@ -46,7 +46,8 @@ async def create_task_handler(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer('📌Выберите тип задания ',reply_markup=kb.inline_task_type)
     await callback.answer()
 
-@admin.callback_query(F.data.in_({'subscribe', 'entry'}))
+
+@admin.callback_query(F.data.in_({'subscribe', 'entry','BotEntry'}))
 async def task_type_process(callback: CallbackQuery, state: FSMContext):
     task_type = callback.data 
     await state.update_data(task_type=task_type)
@@ -100,11 +101,37 @@ async def process_count(message: Message, state: FSMContext):
     if not message.text.isdigit():
         await message.answer("❌ Пожалуйста, введите количество выполнений числом.")
         return
-    
     await state.update_data(count=int(message.text))
+    data = await state.get_data()
+    task_type = data['task_type']
+    if task_type == 'BotEntry':
+        return await create_task_handler(message,state)
+    
     await message.answer('📨 Перешлите любое сообщение из данной канала:')
     await state.set_state(CreateTask.waiting_fot_chat_id)
-    
+
+
+async def create_task_handler(message:Message,state:FSMContext):
+    data = await state.get_data()
+    link = data['link'] 
+    reward = data['reward']
+    count = data['count']
+    task_type = data['task_type']
+    describe = data.get('describe')
+    print(f'link: {link}, reward: {reward}, count: {count}')
+    await create_task(link=link, reward=reward, total_completions=count,chat_id = None,title=None, task_type=task_type, description=describe)
+
+    text = f"""
+    ✅ <b>Задание успешно создано!</b>
+    📌 <b>Ссылка:</b> <a href="{link}">{link}</a>
+    💰 <b>Вознаграждение:</b> {reward}
+    📊 <b>Количество выполнений:</b> {count}
+"""
+
+    if describe:
+        await message.answer(f"\n📝 Описание: {describe}", parse_mode='HTML')
+    await message.answer(text, parse_mode='HTML', disable_web_page_preview=True)
+    await state.clear()
 
 @admin.message(CreateTask.waiting_fot_chat_id)
 async def process_chat_id(message: Message, state: FSMContext):

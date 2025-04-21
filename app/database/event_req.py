@@ -18,17 +18,17 @@ def connection(func):
     return inner
 
 class EventFunction:
-
+    
     @connection
     async def create_event(session,c1,c2,c3,c4,c5,c6,type,rule,text,image,end_date):
         now = datetime.now()
         new_event = Event(
             c1 = c1,
             c2 = c2,
-            c3 = c3,
-            c4 = c4,
-            c5 = c5,
-            c6 = c6,
+            c3 = c3 if c3 is not None else None,
+            c4 = c4 if c4 is not None else None,
+            c5 = c5 if c5 is not None else None,
+            c6 = c6 if c6 is not None else None,
             rules = rule,
             type = type,
             text = text,

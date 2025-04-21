@@ -19,6 +19,7 @@ from config import ADMIN, GROUP_ID,CHANNEL_ID
 from app.admin import start_admin
 from aiogram import types
 from aiogram.types import FSInputFile
+import asyncio
 
 image_start = 'images\image_start.jpg'
 image_ref = 'images\image_ref.jpg'
@@ -26,6 +27,8 @@ image_withdraw = 'images\image_withdraw.jpg'
 image_welcome = 'images\image_welcome.jpg'
 image_task = 'images\image_task.jpg'
 
+
+BotEntry = {}
 
 @user.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
@@ -50,10 +53,12 @@ async def cmd_start(message: Message, state: FSMContext):
 async def success_message(message: Message):
     text = await get_config('start_text')
     #image_url = await get_config('image_link')  # Получаем ссылку на изображение
+    
 
 
     user_id = message.from_user.id
-    formatted_text = text.format(user_id=user_id)
+    referral_link = f"https://t.me/FreeStard_bot?start={user_id}"
+    formatted_text = text.format(user_id=user_id,referral_link=referral_link)
     photo = FSInputFile(image_start)
     await message.answer_photo(photo, caption=formatted_text, parse_mode="HTML", reply_markup=kb.main)
     await message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
@@ -66,7 +71,7 @@ async def success_message(message: Message):
     # await message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
 
 
-
+#ЗАДАНИЯ
 @user.message(F.text == '🎯Задания')
 async def get_task_hander(message: Message,state: FSMContext):
     task = await get_first_available_task(message.from_user.id)  # Получаем список доступных заданий
@@ -103,9 +108,25 @@ async def get_task_hander(message: Message,state: FSMContext):
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.entry_type_inline(task.link)
         await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+    elif task.type == 'BotEntry':
+        text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
 
+        if task.description:  # Проверяем, есть ли описание
+            text += f"{task.description}\n\n"
 
+        text += f"• <b>Перейдите в бота</b> <a href='{task.link}'>{task.link}</a>\n"
+        text += f"• <b>Награда:</b> {task.reward}⭐"
+        await state.update_data(task = task)
+        reward = await count_reward(message.from_user.id)
+        await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+                            '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
+        keyboard = await kb.complete_task_inline(task.link)
+        await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        BotEntry[message.from_user.id] = False
+        await asyncio.sleep(5)
+        BotEntry[message.from_user.id] = True
 
+#ЗАДАНИЯ
 @user.callback_query(F.data == 'skip')
 async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
     await callback.message.delete()
@@ -139,9 +160,24 @@ async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
         await create_task_state(callback.from_user.id,task.id)
         keyboard = await kb.entry_type_inline(task.link)
         await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+    elif task.type == 'BotEntry':
+        text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
 
+        if task.description:  # Проверяем, есть ли описание
+            text += f"{task.description}\n\n"
 
+        text += f"• <b>Перейдите в бота</b> <a href='{task.link}'>{task.link}</a>\n"
+        text += f"• <b>Награда:</b> {task.reward}⭐"
+        await state.update_data(task = task)
+        reward = await count_reward(callback.from_user.id)
+        
+        keyboard = await kb.complete_task_inline(task.link)
+        await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        BotEntry[callback.from_user.id] = False
+        await asyncio.sleep(5)
+        BotEntry[callback.from_user.id] = True
 
+#ЗАДАНИЯ
 @user.callback_query(F.data == 'complete_task')
 async def complete_task_handler(callback: CallbackQuery, bot: Bot, state: FSMContext):
     data = await state.get_data()
@@ -152,7 +188,10 @@ async def complete_task_handler(callback: CallbackQuery, bot: Bot, state: FSMCon
         return
 
     chat_id = task_present.chat_id
-
+    if task_present.type == 'BotEntry':
+        entry_state = BotEntry.get(callback.from_user.id, False)
+        if not entry_state:  # Если состояние False
+            return await callback.answer("Задание не выполнено.")
     # Проверяем подписку только если задание типа "subscribe"
     if task_present.type == 'subscribe':
         is_subscribed = await is_user_subscribed(bot, callback.from_user.id, chat_id)
@@ -204,7 +243,10 @@ async def complete_task_handler(callback: CallbackQuery, bot: Bot, state: FSMCon
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await create_task_state(callback.from_user.id, task.id)
         keyboard = await kb.entry_type_inline(task.link)
-
+    elif task.type == 'BotEntry':
+        text += f"• <b>Перейдите в бота</b> <a href='{task.link}'>{task.link}</a>\n"
+        text += f"• <b>Награда:</b> {task.reward}⭐"
+        keyboard = await kb.complete_task_inline(task.link)
     await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
 
 
@@ -260,7 +302,7 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
         await callback.answer("❌ Вы не подписаны на канал! Подпишитесь и попробуйте снова.",show_alert=True)
 
 
-
+#ЗАДАНИЯ
 @user.callback_query(F.data == 'task')
 async def task_handler(callback:CallbackQuery, state:FSMContext):
     task = await get_first_available_task(callback.from_user.id)  # Получаем список доступных заданий
@@ -298,6 +340,22 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.entry_type_inline(task.link)
         await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+    elif task.type == 'BotEntry':
+        text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
+
+        if task.description:  # Проверяем, есть ли описание
+            text += f"{task.description}\n\n"
+
+        text += f"• <b>Перейдите в бота</b> <a href='{task.link}'>{task.link}</a>\n"
+        text += f"• <b>Награда:</b> {task.reward}⭐"
+        await state.update_data(task = task)
+        reward = await count_reward(callback.from_user.id)
+        
+        keyboard = await kb.complete_task_inline(task.link)
+        await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        BotEntry[callback.from_user.id] = False
+        await asyncio.sleep(5)
+        BotEntry[callback.from_user.id] = True
     await callback.answer()
 
 

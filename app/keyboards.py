@@ -108,7 +108,8 @@ stat_edit = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '
                                                   [InlineKeyboardButton(text = '✏️Сортировать по дате(Количество привлеченных)',callback_data='NumDate_ref')]])
 
 inline_task_type = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Подписка',callback_data= 'subscribe')],
-                                                         [InlineKeyboardButton(text = 'Заявка', callback_data = 'entry')]])
+                                                         [InlineKeyboardButton(text = 'Заявка', callback_data = 'entry')],
+                                                         [InlineKeyboardButton(text = 'Переход в бота',callback_data='BotEntry')]])
 
 describe_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '❌Без текстат', callback_data= 'describe_none')]])
 
