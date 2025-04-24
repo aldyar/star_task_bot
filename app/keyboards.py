@@ -70,10 +70,10 @@ async def withdraw_keyboard():
 
 
 #ADMIN KEYBOARDS
-main_admin = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = '🔵	Задание'),
-                                            KeyboardButton(text = '⏺	Реферальная система')],
-                                            [KeyboardButton(text = ' 🟢 Вывод средств'),
-                                             KeyboardButton(text = '🟦 🟥 🟩 🟨Конкурс')],
+main_admin = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = 'Задание'),
+                                            KeyboardButton(text = 'Реферальная система')],
+                                            [KeyboardButton(text = 'Вывод средств'),
+                                             KeyboardButton(text = 'Конкурс')],
                                             [KeyboardButton(text = 'Приветствие'),
                                             KeyboardButton(text = 'Напоминание')],
                                             [KeyboardButton(text = 'Бонус'),

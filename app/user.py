@@ -47,7 +47,7 @@ async def cmd_start(message: Message, state: FSMContext):
     channels = await Channel.get_channels()
     text = (
     "🤖 <b>Капча</b>\n\n"
-    "🔵 Подпишись на <a href='https://t.me/FreeStard'>канал</a>\n\n"
+    "🔵 Подпишись на <a href='https://t.me/FreeStards'>канал</a>\n\n"
 )
     if channels:
         for channel in channels:

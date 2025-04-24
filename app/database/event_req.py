@@ -91,7 +91,7 @@ class EventFunction:
 
 
     @connection
-    async def add_participant_to_event(session, tg_id) -> bool:
+    async def add_participant_to_event(session, tg_id,bot) -> bool:
     # Получаем событие
         event = await EventFunction.get_active_event()
 
@@ -111,7 +111,7 @@ class EventFunction:
         # Добавляем нового участника
         current_participants.append(str_user_id)
         updated_participants = ",".join(current_participants)
-
+        await bot.send_message(tg_id,"🎉*Вы участвуете в конкурсе*" , parse_mode="Markdown")
         # Обновляем в базе
         await session.execute(
             update(Event)
@@ -245,9 +245,11 @@ class EventFunction:
             print(f"[16] Итоги конкурса отправлены админу.")
 
 
-
-
-
+    @connection
+    async def check_active_event_by_id(session,event_id):
+        event = await session.scalar(select(Event).where(Event.id == event_id))
+        if event:
+            return event.active
 
 
     # @connection

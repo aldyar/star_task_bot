@@ -302,6 +302,8 @@ async def dont_save_event(callback:CallbackQuery,state:FSMContext):
 
 @admin.callback_query(F.data == 'SendEvent')
 async def send_event_handler(callback:CallbackQuery,bot:Bot):
+    users = await User.get_all_users()
+    user_ids = [user.tg_id for user in users]
     event = await EventFunction.get_active_event()
     photo = FSInputFile(event.image)
     keyboard = await kb.inline_join_event(event.id)
@@ -313,17 +315,31 @@ async def send_event_handler(callback:CallbackQuery,bot:Bot):
                     reply_markup=keyboard
                 )
     await EventFunction.save_message_id(message.message_id)
+    for user_id in user_ids:
+        try:
+            await bot.send_photo(
+                    user_id,
+                    photo=photo,
+                    caption=event.text,
+                    parse_mode="HTML",
+                    reply_markup=keyboard
+                )
+        except TelegramAPIError as e:  # Любая другая ошибка
+            print(f"Ошибка отправки {user_id}: {e}")
+        await asyncio.sleep(0.3)  # Задержка, чтобы избежать блокировки
+    
 
 @admin.callback_query(F.data.startswith('eventjoin_'))
-async def join_event_handler(callback:CallbackQuery):
+async def join_event_handler(callback:CallbackQuery,bot:Bot):
     event_id = callback.data.removeprefix("eventjoin_")
 
     event = await EventFunction.get_active_event()
-
+    if await EventFunction.check_active_event_by_id(event_id) == False:
+        return await callback.answer('Конкурс завершен',show_alert=True)
     if await EventFunction.check_user_referrals_in_event(callback.from_user.id) == 0:
-        return await callback.answer('Вы не полнили условия')
-    await EventFunction.add_participant_to_event(callback.from_user.id)
-    await callback.answer('Вы участвуете в конкурсе')
+        return await callback.answer('Вы не выполнили условия',show_alert=True)
+    await EventFunction.add_participant_to_event(callback.from_user.id,bot)
+    await callback.answer('Вы участвуете в конкурсе',show_alert=True)
 
 
 @admin.callback_query(F.data.startswith('DeleteEvent_'))

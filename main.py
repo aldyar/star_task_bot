@@ -34,7 +34,7 @@ async def main():
 async def on_startup(bot:Bot):
     await async_main()
     await create_config() 
-    asyncio.create_task(check_subscriptions(bot))
+    #asyncio.create_task(check_subscriptions(bot))
     asyncio.create_task(event_watcher(bot))
 
     
