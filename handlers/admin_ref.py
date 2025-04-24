@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.states import EditRef
 import re
-from app.database.requests import get_config, edit_ref_text, edit_ref_reward
+from database.requests import get_config, edit_ref_text, edit_ref_reward
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN
 from aiogram.utils.text_decorations import html_decoration

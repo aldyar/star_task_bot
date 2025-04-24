@@ -1,21 +1,21 @@
 import asyncio
 from aiogram import Dispatcher, Bot
 from config import TOKEN, CHANNEL_LINK
-from app.admin import admin as admin_router 
-from app.admin_ref import admin as admin_ref_router
-from app.admin_withdraw import admin as admin_withdraw
-from app.admin_bonus import admin as admin_bonus
-from app.admin_statistics import admin as admin_stat
-from app.admin_start import admin as admin_start
-from app.admin_reminder import admin as admin_reminder
-from app.admin_event import admin as admin_event
-from app.user import user
-from app.user_profile import user as user_profile
-from app.user_top import user as user_top
-from app.database.models import async_main
-from app.database.requests import create_config,check_subscriptions
-#from app.middleware import SubscriptionMiddleware  # Импорт мидлвара
-from app.database.asyncio_task import event_watcher
+from handlers.admin import admin as admin_router 
+from handlers.admin_ref import admin as admin_ref_router
+from handlers.admin_withdraw import admin as admin_withdraw
+from handlers.admin_bonus import admin as admin_bonus
+from handlers.admin_statistics import admin as admin_stat
+from handlers.admin_start import admin as admin_start
+from handlers.admin_reminder import admin as admin_reminder
+from handlers.admin_event import admin as admin_event
+from handlers.user import user
+from handlers.user_profile import user as user_profile
+from handlers.user_top import user as user_top
+from database.models import async_main
+from database.requests import create_config,check_subscriptions
+#from handlers.middleware import SubscriptionMiddleware  # Импорт мидлвара
+from database.asyncio_task import event_watcher
 async def main():
     bot = Bot(token=TOKEN)
     dp = Dispatcher()

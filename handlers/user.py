@@ -3,11 +3,11 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
-from app.database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
+from database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
                                    get_withdraw_limit, set_referrer_id, create_transaction, get_task,
                                    is_user_subscribed,completed_task,create_task_completions_history,check_subscriptions,
                                    check_user,insert_message_id, count_reward,join_request,skip_task,get_task_about_taskid)
-from app.database.task_req import get_first_available_task,skip_task_function,create_task_state,get_task_state,create_task_history,check_entry_task_history
+from function.task_req import get_first_available_task,skip_task_function,create_task_state,get_task_state,create_task_history,check_entry_task_history
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
 from aiogram import Bot
@@ -16,11 +16,11 @@ from datetime import datetime, timedelta
 import text as txt
 user = Router()
 from config import ADMIN, GROUP_ID,CHANNEL_ID
-from app.admin import start_admin
+from handlers.admin import start_admin
 from aiogram import types
 from aiogram.types import FSInputFile
 import asyncio
-from app.database.channel_req import StartChannelFunction as Channel
+from function.channel_req import StartChannelFunction as Channel
 
 
 image_start = 'images/image_start.jpg'

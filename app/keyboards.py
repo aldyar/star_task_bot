@@ -1,5 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMarkup, InlineKeyboardButton
-from app.database.requests import get_withdraw_limit,get_task_about_taskid
+from database.requests import get_withdraw_limit,get_task_about_taskid
 main = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text = '⭐️Заработать звёзды'),
                                       KeyboardButton(text = '🏆Топ')],
                                      [KeyboardButton(text = '🎁Вывести звёзды'),

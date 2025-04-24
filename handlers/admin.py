@@ -5,11 +5,10 @@ from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.states import CreateTask, EditTask
 import re
-from app.database.requests import get_all_tasks, get_task, edit_task_reward, edit_task_active, edit_task_total_completion, create_task,get_task_about_taskid
-from app.database.task_req import get_archive_task, activate_task
+from database.requests import get_all_tasks, get_task, edit_task_reward, edit_task_active, edit_task_total_completion, create_task,get_task_about_taskid
+from function.task_req import get_archive_task, activate_task
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMarkup, InlineKeyboardButton
-from app.database.models import User, Config, Task, TaskCompletion
-from app.database.models import async_session
+from database.models import User, Config, Task, TaskCompletion
 from config import ADMIN
 from aiogram.utils.text_decorations import html_decoration
 

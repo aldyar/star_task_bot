@@ -4,7 +4,7 @@ from aiogram.filters import Filter, Command, CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.states import EditLimit
-from app.database.requests import edit_withdraw_limit, get_pending_transactions, complete_transaction, get_transaction
+from database.requests import edit_withdraw_limit, get_pending_transactions, complete_transaction, get_transaction
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN, GROUP_ID
 from aiogram import Bot

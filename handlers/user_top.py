@@ -3,7 +3,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
-from app.database.user_req import UserFunction
+from function.user_req import UserFunction
 user = Router()
 from aiogram.types import FSInputFile
 

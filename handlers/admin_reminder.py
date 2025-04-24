@@ -5,9 +5,9 @@ from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.states import Reminder as ReminderState
 import re
-from app.database.requests import (get_config, edit_ref_text, edit_ref_reward, edit_start_text,return_start_text, 
+from database.requests import (get_config, edit_ref_text, edit_ref_reward, edit_start_text,return_start_text, 
                                    set_image_url, delete_image_url,get_image_url)
-from app.database.reminder_req import ReminderFunction as Reminder
+from function.reminder_req import ReminderFunction as Reminder
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN
 import os
@@ -16,7 +16,7 @@ os.makedirs(IMAGE_DIR, exist_ok=True)
 from aiogram import Bot
 from aiogram.types import FSInputFile
 from aiogram.utils.text_decorations import html_decoration
-from app.database.user_req import UserFunction as User
+from function.user_req import UserFunction as User
 from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError
 import asyncio
 

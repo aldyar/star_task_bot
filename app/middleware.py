@@ -3,7 +3,7 @@ from aiogram import BaseMiddleware, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.dispatcher.event.bases import TelegramObject
 from aiogram.exceptions import TelegramBadRequest
-from app.database.requests import check_user
+from database.requests import check_user
 
 class SubscriptionMiddleware(BaseMiddleware):
     def __init__(self, bot: Bot, channel_link: str):

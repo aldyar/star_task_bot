@@ -1,5 +1,5 @@
-from app.database.models import async_session
-from app.database.models import User, Config, Task, TaskCompletion, Transaction,TaskHistory,TaskState, Event,StartChannel
+from database.models import async_session
+from database.models import User, Config, Task, TaskCompletion, Transaction,TaskHistory,TaskState, Event,StartChannel
 from sqlalchemy import select, update, delete, desc
 from decimal import Decimal
 from datetime import datetime, timedelta

@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import sleep
-from app.database.event_req import EventFunction
+from function.event_req import EventFunction
 
 async def event_watcher(bot):
     while True:

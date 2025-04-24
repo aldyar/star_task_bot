@@ -4,7 +4,7 @@ from aiogram.filters import Filter, Command, CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 import re
-from app.database.requests import (get_config, edit_ref_text, edit_ref_reward, edit_start_text,return_start_text, 
+from database.requests import (get_config, edit_ref_text, edit_ref_reward, edit_start_text,return_start_text, 
                                    set_image_url, delete_image_url,get_image_url)
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN
@@ -15,7 +15,7 @@ IMAGE_DIR = "images"
 os.makedirs(IMAGE_DIR, exist_ok=True)
 from aiogram.types import FSInputFile
 from aiogram.utils.text_decorations import html_decoration
-from app.database.channel_req import StartChannelFunction as Channel
+from function.channel_req import StartChannelFunction as Channel
 from app.states import StartChannel
 
 admin = Router()

@@ -2,16 +2,16 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
-from app.database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
+from database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
                                    get_withdraw_limit, set_referrer_id, create_transaction, get_task,
                                    is_user_subscribed,completed_task,create_task_completions_history,check_subscriptions,
                                    check_user,insert_message_id, count_reward,join_request,skip_task,get_task_about_taskid)
-from app.database.task_req import get_first_available_task,skip_task_function,create_task_state,get_task_state,create_task_history,check_entry_task_history
+from function.task_req import get_first_available_task,skip_task_function,create_task_state,get_task_state,create_task_history,check_entry_task_history
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram import Bot
 import random
-from app.database.user_req import UserFunction as User
-from app.user import success_message,ref_system
+from function.user_req import UserFunction as User
+from handlers.user import success_message,ref_system
 from aiogram.types import FSInputFile
 
 image_stat = 'images/image_stat.jpg'

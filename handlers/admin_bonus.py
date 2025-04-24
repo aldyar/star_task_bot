@@ -4,7 +4,7 @@ from aiogram.filters import Filter, Command, CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
 from app.states import EditBonus
-from app.database.requests import get_config, edit_bonus
+from database.requests import get_config, edit_bonus
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import ADMIN
 
