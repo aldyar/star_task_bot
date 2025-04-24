@@ -3,19 +3,11 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 import app.keyboards as kb
-from app.database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
-                                   get_withdraw_limit, set_referrer_id, create_transaction, get_task,
-                                   is_user_subscribed,completed_task,create_task_completions_history,check_subscriptions,
-                                   check_user,insert_message_id, count_reward,join_request,skip_task,get_task_about_taskid)
-from app.database.task_req import get_first_available_task,skip_task_function,create_task_state,get_task_state,create_task_history,check_entry_task_history
-from aiogram.enums import ChatAction
-from aiogram import Bot
-from datetime import datetime, timedelta
 from app.database.user_req import UserFunction
 user = Router()
 from aiogram.types import FSInputFile
 
-image_url = 'images\image_top.jpg'
+image_url = 'images/image_top.jpg'
 photo = FSInputFile(image_url)
 
 

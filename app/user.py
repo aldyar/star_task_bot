@@ -23,11 +23,11 @@ import asyncio
 from app.database.channel_req import StartChannelFunction as Channel
 
 
-image_start = 'images\image_start.jpg'
-image_ref = 'images\image_ref.jpg'
-image_withdraw = 'images\image_withdraw.jpg'
-image_welcome = 'images\image_welcome.jpg'
-image_task = 'images\image_task.jpg'
+image_start = 'images/image_start.jpg'
+image_ref = 'images/image_ref.jpg'
+image_withdraw = 'images/image_withdraw.jpg'
+image_welcome = 'images/image_welcome.jpg'
+image_task = 'images/image_task.jpg'
 
 
 BotEntry = {}

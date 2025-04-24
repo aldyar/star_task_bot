@@ -14,7 +14,7 @@ from app.database.user_req import UserFunction as User
 from app.user import success_message,ref_system
 from aiogram.types import FSInputFile
 
-image_stat = 'images\image_stat.jpg'
+image_stat = 'images/image_stat.jpg'
 
 user = Router()
 
