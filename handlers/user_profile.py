@@ -46,6 +46,7 @@ async def user_profile_handler(message:Message):
         text += "Нет приглашённых пользователей."
     await message.answer_photo(photo,caption=text,reply_markup=kb.inline_user_profile)
 
+
 @user.callback_query(F.data =='BackMenu')
 async def back_user_handler(callback:CallbackQuery):
     await success_message(callback.message)
@@ -69,9 +70,9 @@ async def earn_stars_handler(callback:CallbackQuery):
     "• <b>Распространяй ссылку в соцсетях: TikTok, Instagram, WhatsApp и других</b> 🌐\n\n"
     f"🗣 <b>Вы пригласили:</b> {user.referral_count}"
 )
+    formatted_text = change_text.format(referral_link=referral_link)
 
 
-
-    await callback.message.answer(text, disable_web_page_preview=True, parse_mode='HTML')
+    await callback.message.answer(formatted_text, disable_web_page_preview=True, parse_mode='HTML')
     await callback.answer()
 

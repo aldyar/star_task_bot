@@ -35,18 +35,18 @@ async def statistics_handler(message: Message, state: FSMContext):
     )
 
     # Отправляем каждого пользователя отдельным сообщением
-    for user in users:
-        username = user.username if user.username else "Не указан"
-        referrer_id = user.referrer_id if user.referrer_id else "Нет"
+    # for user in users:
+    #     username = user.username if user.username else "Не указан"
+    #     referrer_id = user.referrer_id if user.referrer_id else "Нет"
         
-        user_info = (
-            f"👤 Username: `{username}`\n"
-            f"🆔 Telegram ID: {user.tg_id}\n"
-            f"📲 Referrer ID: {referrer_id}\n"
-            f"📊 Приглашенных: {user.referral_count}"
-        )
+    #     user_info = (
+    #         f"👤 Username: `{username}`\n"
+    #         f"🆔 Telegram ID: {user.tg_id}\n"
+    #         f"📲 Referrer ID: {referrer_id}\n"
+    #         f"📊 Приглашенных: {user.referral_count}"
+    #     )
         
-        await message.answer(user_info,parse_mode='Markdown')
+    #     await message.answer(user_info,parse_mode='Markdown')
 
 @admin.callback_query(Admin(), F.data.startswith('NumDate_'))
 async def num_date_handler(callback: CallbackQuery, state: FSMContext):

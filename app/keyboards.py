@@ -152,3 +152,8 @@ async def inline_join_event(event_id):
 inline_admin_start_channel = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Добавить канал',callback_data='AddStartChannel')],
                                                                    [InlineKeyboardButton(text = 'Удалить канал',callback_data='DeleteStartChannel')]])
 
+async def inline_subgram(link):
+    inline_subgram = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Выполнить',url = f'{link}'),
+                                                        InlineKeyboardButton(text = '✅Выполнил', callback_data=f'SubComplete_{link}')],
+                                                        [InlineKeyboardButton(text = '⏩Пропустить', callback_data= 'SkipSubgram')]])
+    return inline_subgram

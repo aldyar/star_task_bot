@@ -21,7 +21,7 @@ from aiogram import types
 from aiogram.types import FSInputFile
 import asyncio
 from function.channel_req import StartChannelFunction as Channel
-
+from handlers.user_subgram import test_subgram
 
 image_start = 'images/image_start.jpg'
 image_ref = 'images/image_ref.jpg'
@@ -31,6 +31,7 @@ image_task = 'images/image_task.jpg'
 
 
 BotEntry = {}
+
 
 @user.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
@@ -137,6 +138,7 @@ async def get_task_hander(message: Message,state: FSMContext):
         await asyncio.sleep(5)
         BotEntry[message.from_user.id] = True
 
+
 #ЗАДАНИЯ
 @user.callback_query(F.data == 'skip')
 async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
@@ -147,6 +149,8 @@ async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
     if not task:
         await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
         return
+    elif task == 3:
+        return await test_subgram(callback.message,state,callback.from_user.id)
     if task.type == 'subscribe':
     
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
@@ -465,23 +469,14 @@ async def fail_callback(callback: CallbackQuery):
 ###########################################################################################################################
 ###########################################################################################################################
 
-# from app.database.requests import get_top_referrers_by_date
 
-# @user.message(F.text == ("test"))
-# async def check_admin_handler(message: Message, bot: Bot):
-#     date_from = "10-04-2025"
-#     date_to = "18-04-2025"
-#     result = await get_top_referrers_by_date(date_from, date_to)
-#     response_text = f"🏆 Топ рефов с {date_from.replace('-', '.')} по {date_to.replace('-', '.')}:\n\n"
-    
-#     if result:
-#         for row in result:
-#             display_name = f"@{row[1]}" if row[1] else f"ID: {row[0]}"
-#             response_text += f"{display_name} — {row[2]} приглашений\n"
-#     else:
-#         response_text += "Нет рефералов в этом промежутке."
 
-#     await message.answer(response_text)
+@user.message(F.text == ("test"))
+async def check_admin_handler(message: Message, bot: Bot):
+    user_id = message.from_user.id
+    premium = message.from_user.is_premium
+    name = message.from_user.first_name 
+    print(f"Пользователь: {name}, Премиум статус: {premium}")
 
 
 
@@ -496,7 +491,7 @@ async def handle_join_request(update: types.ChatJoinRequest):
     if check_history:
         await create_task_history(user_id,object.id,chat_id)
         completed = await completed_task(object.id,user_id,object.reward)
-        await update.bot.send_message(chat_id=user_id, text=f'FIND TASK ID:{task.task_id}') 
+        #await update.bot.send_message(chat_id=user_id, text=f'FIND TASK ID:{task.task_id}') 
         #complete = await join_request(user_id, chat_id)
         complete_text = (
                     f'*✅ Задание №{object.id} выполнено!*\n\n'

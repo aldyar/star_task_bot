@@ -128,6 +128,8 @@ class StartChannel(Base):
     chat_id: Mapped[int] = mapped_column(Integer,nullable=True)
     title: Mapped[str] = mapped_column(String,nullable=True)    
     link: Mapped[str] = mapped_column(String, nullable=True)
+
+    
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

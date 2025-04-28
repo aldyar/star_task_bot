@@ -12,6 +12,7 @@ from handlers.admin_event import admin as admin_event
 from handlers.user import user
 from handlers.user_profile import user as user_profile
 from handlers.user_top import user as user_top
+from handlers.user_subgram import user as user_subgram
 from database.models import async_main
 from database.requests import create_config,check_subscriptions
 #from handlers.middleware import SubscriptionMiddleware  # Импорт мидлвара
@@ -26,7 +27,7 @@ async def main():
 
     # Регистрация роутеров
     dp.include_routers(admin_router, admin_ref_router, admin_withdraw, admin_bonus, admin_stat,admin_start ,admin_reminder,admin_event, 
-                       user, user_profile, user_top)
+                       user, user_profile, user_top,user_subgram)
     dp.startup.register(on_startup)
 
     await dp.start_polling(bot)

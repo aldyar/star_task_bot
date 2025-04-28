@@ -26,6 +26,17 @@ async def get_first_available_task(session, tg_id):
 
 @connection
 async def skip_task_function(session, tg_id, task_id):
+    # Получаем ID последнего активного задания
+    last_active_task_id = await session.scalar(
+        select(Task.id)
+        .where(Task.is_active == True)
+        .order_by(Task.id.desc())
+        .limit(1)
+    )
+    # Получаем последгний айди задания и если он совпадает с переданным в таком случае возвращаем 3 для того что бы перейти в Subgram задания
+    if task_id == last_active_task_id:
+        return 3
+    
     task = await session.scalar(
         select(Task)
         .where(
