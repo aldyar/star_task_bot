@@ -42,16 +42,16 @@ class SubGramFunction:
             return response_data 
 
 
-    async def get_unsubscribed_channel_links(response: dict):
-        unsubscribed_links = []
+    # async def get_unsubscribed_channel_links(response: dict):
+    #     unsubscribed_links = []
 
-        sponsors = response.get("additional", {}).get("sponsors", [])
+    #     sponsors = response.get("additional", {}).get("sponsors", [])
 
-        for sponsor in sponsors:
-            if sponsor.get("status") == "unsubscribed" and sponsor.get("type") == "channel":
-                unsubscribed_links.append(sponsor.get("link"))
+    #     for sponsor in sponsors:
+    #         if sponsor.get("status") == "unsubscribed" and sponsor.get("type") == "channel":
+    #             unsubscribed_links.append(sponsor.get("link"))
 
-        return unsubscribed_links
+    #     return unsubscribed_links
     
     async def get_unsubscribed_channel_links(response: dict):
         unsubscribed_links = []

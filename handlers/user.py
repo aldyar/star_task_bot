@@ -89,7 +89,8 @@ async def get_task_hander(message: Message,state: FSMContext):
     task = await get_first_available_task(message.from_user.id)  # Получаем список доступных заданий
     photo =FSInputFile(image_task)
     if not task:
-        await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        #await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        await test_subgram(message,state,message.from_user.id)
         return
     if task.type == 'subscribe':
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"

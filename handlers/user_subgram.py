@@ -31,7 +31,8 @@ BotEntry = {}
 
 @user.message(F.text == 'subgram')
 async def test_subgram(message:Message,state:FSMContext,id):
-   # from handlers.user import get_task_hander
+    #await message.answer('затронул test_subgram')
+    print(f"[TEST_HANDLER ]USERID   :_____ {message.from_user.id}")
     user_id = id
     premium = int(message.from_user.is_premium or 0)
     name = message.from_user.first_name 
@@ -41,7 +42,8 @@ async def test_subgram(message:Message,state:FSMContext,id):
     index = 0
     await state.update_data(index=index)
     if not links:
-        return await get_task_hander(message,state)
+        return await get_task_hander(message,state,id)
+
     link = links[index]["link"]
     type = links[index]["type"]
     reward = 0.25
@@ -77,6 +79,8 @@ async def complete_subgram_task_handler(callback:CallbackQuery,state:FSMContext)
 
 @user.callback_query(F.data == 'SkipSubgram')
 async def skip_subgram_task(callback:CallbackQuery,state:FSMContext):
+    #await callback.message.answer('затронул skip_subgram_task')
+    print(f"[SKIP_TASK_HANDLER ]USERID   :_____ {callback.from_user.id}")
     #from handlers.user import get_task_hander
     await callback.message.delete()
     data = await state.get_data()
@@ -90,7 +94,7 @@ async def skip_subgram_task(callback:CallbackQuery,state:FSMContext):
     subgram = await Subgram.send_post(user_id,name,premium)
     links = await Subgram.get_unsubscribed_channel_links(subgram)
     if index >= len(links):
-        await get_task_hander(callback.message,state)
+        await get_task_hander(callback.message,state,user_id)
         return  # Останавливаем выполнение функции
     link = links[index]["link"]
     type = links[index]["type"]
@@ -108,11 +112,19 @@ async def skip_subgram_task(callback:CallbackQuery,state:FSMContext):
     await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True,reply_markup= keyboard)
 
 
-async def get_task_hander(message: Message,state: FSMContext):
-    print(f"USERID   :_____ {message.from_user.id}")
-    task = await get_first_available_task(message.from_user.id)  # Получаем список доступных заданий
-    if not task:
+async def get_task_hander(message: Message,state: FSMContext,id):
+    #await message.answer('затронул get_task_hander')
+    print(f"[GET_TASK_HANDLER ]USERID   :_____ {message.from_user.id}")
+    task = await get_first_available_task(id)  # Получаем список доступных заданий
+    premium = int(message.from_user.is_premium or 0)
+    name = message.from_user.first_name 
+    subgram = await Subgram.send_post(id,name,premium)
+    links = await Subgram.get_unsubscribed_channel_links(subgram)
+    if not task and not links:
         await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        return
+    if not task:
+        await test_subgram(message,state,id)
         return
     if task.type == 'subscribe':
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
