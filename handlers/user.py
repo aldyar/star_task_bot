@@ -22,6 +22,9 @@ from aiogram.types import FSInputFile
 import asyncio
 from function.channel_req import StartChannelFunction as Channel
 from handlers.user_subgram import test_subgram
+from function.subgram_req import SubGramFunction as Subgram
+from app.storage import SubgramList
+from app.storage import BotEntry
 
 image_start = 'images/image_start.jpg'
 image_ref = 'images/image_ref.jpg'
@@ -30,7 +33,6 @@ image_welcome = 'images/image_welcome.jpg'
 image_task = 'images/image_task.jpg'
 
 
-BotEntry = {}
 
 
 @user.message(CommandStart())
@@ -86,6 +88,14 @@ async def success_message(message: Message):
 #ЗАДАНИЯ
 @user.message(F.text == '🎯Задания')
 async def get_task_hander(message: Message,state: FSMContext):
+    user_id = message.from_user.id
+    premium = int(message.from_user.is_premium or 0)
+    name = message.from_user.first_name 
+    subgram = await Subgram.send_post(user_id,name,premium)
+    links = await Subgram.get_unsubscribed_channel_links(subgram)
+    SubgramList[user_id] = links  # перезаписываем старые данные
+    print(f"[UPDATED] SubgramList for {user_id}: {SubgramList[user_id]}")
+
     task = await get_first_available_task(message.from_user.id)  # Получаем список доступных заданий
     photo =FSInputFile(image_task)
     if not task:

@@ -1,0 +1,2 @@
+SubgramList = {}
+BotEntry = {}
