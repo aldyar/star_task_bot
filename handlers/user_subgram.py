@@ -32,24 +32,26 @@ from app.storage import BotEntry
 
 @user.message(F.text == 'subgram')
 async def test_subgram(message:Message,state:FSMContext,id):
+    await state.clear()
     print(f"[TEST_HANDLER ]USERID   :_____ {message.from_user.id}")
-    links = SubgramList[id]
+    all_links = SubgramList.get(id, [])
+    links = [item for item in all_links if not item.get("complete", False)]
+    print(f'LINKS:______{links}')
     index = 0
     await state.update_data(index=index)
     if not links:
         return await get_task_hander(message,state,id)
 
-    link = SubgramList[id][index]["link"]
-    type = SubgramList[id][index]["type"]
+    link = links[index]["link"]
+    type = links[index]["type"]
+    complete = SubgramList[id][index]["complete"]
     reward = 0.25
     text = f"🎯 <b>Доступно задание !</b>\n\n"
     keyboard = await kb.inline_subgram(link)
     if type == 'channel':
-        text += f"• <b>11Подпишись на</b> <a href='{link}'>{link}</a>\n"
+        text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
     elif type =='bot':
         text += f"• <b>Запустите бота</b> <a href='{link}'>{link}</a>\n"
-    else:
-        text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
     text += f"• <b>Награда:</b> {reward}⭐"
     #await state.update_data(task = task)
     #reward = await count_reward(message.from_user.id)
@@ -64,7 +66,14 @@ async def complete_subgram_task_handler(callback:CallbackQuery,state:FSMContext)
     link = callback.data.removeprefix("SubComplete_")
     user_id = callback.from_user.id
     check = await Subgram.check_subscribe(link,user_id)
+    links = SubgramList.get(user_id, [])
     if check == True:
+        for item in links:
+            if item.get("link") == link:
+                item["complete"] = True
+                break
+        else: # Только если ни один item не подошёл (break не сработал)
+            SubgramList[user_id] = []
         await Subgram.add_reward_user_subgram(user_id,0.25)
         await callback.answer('⭐ Вознаграждение зачислено')
         await skip_subgram_task(callback,state)
@@ -78,16 +87,20 @@ async def skip_subgram_task(callback:CallbackQuery,state:FSMContext):
     print(f"[SKIP_TASK_HANDLER ]USERID   :_____ {callback.from_user.id}")
     #from handlers.user import get_task_hander
     await callback.message.delete()
-    links = SubgramList[callback.from_user.id]
+    all_links = SubgramList.get(callback.from_user.id, [])
+    links = [item for item in all_links if not item.get("complete", False)]
     data = await state.get_data()
     index = data.get('index')
+    print(f'INDEX__________{index}')
     index += 1
-
+    print(f'INDEX__________ AFTER{index}')
     if index >= len(links):
         await get_task_hander(callback.message,state,callback.from_user.id)
         return  #await callback.message.answer('pass',show_alert=True)
     link = links[index]["link"]
+    print(f'LINK____________________{link}')
     type = links[index]["type"]
+    complete = SubgramList[callback.from_user.id][index]["complete"]
     reward = 0.25
     text = f"🎯 <b>Доступно задание !</b>\n\n"
     keyboard = await kb.inline_subgram(link)
@@ -95,8 +108,6 @@ async def skip_subgram_task(callback:CallbackQuery,state:FSMContext):
         text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
     elif type =='bot':
         text += f"• <b>Запустите бота</b> <a href='{link}'>{link}</a>\n"
-    else:
-        text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
     text += f"• <b>Награда:</b> {reward}⭐"
     await state.update_data(index=index)
     await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True,reply_markup= keyboard)
@@ -108,7 +119,8 @@ async def get_task_hander(message: Message,state: FSMContext,id):
     task = await get_first_available_task(id)  # Получаем список доступных заданий
     data = await state.get_data()
     index = data.get('index')   
-    links = SubgramList[id]
+    all_links = SubgramList.get(id, [])
+    links = [item for item in all_links if not item.get("complete", False)]
     if not task and not links:
         await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
         return

@@ -51,7 +51,8 @@ class SubGramFunction:
             if sponsor.get("status") == "unsubscribed":
                 unsubscribed_links.append({
                     "link": sponsor.get("link"),
-                    "type": sponsor.get("type")
+                    "type": sponsor.get("type"),
+                    "complete": False
                 })
 
         return unsubscribed_links

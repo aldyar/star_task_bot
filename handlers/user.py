@@ -252,7 +252,7 @@ async def complete_task_handler(callback: CallbackQuery, bot: Bot, state: FSMCon
     await state.update_data(task=task)
 
     if not task:
-        await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        await test_subgram(callback.message,state,callback.from_user.id)
         return
 
     # Отправляем новое задание
@@ -333,10 +333,17 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
 #ЗАДАНИЯ
 @user.callback_query(F.data == 'task')
 async def task_handler(callback:CallbackQuery, state:FSMContext):
+    user_id = callback.from_user.id
+    premium = int(callback.from_user.is_premium or 0)
+    name = callback.from_user.first_name 
+    subgram = await Subgram.send_post(user_id,name,premium)
+    links = await Subgram.get_unsubscribed_channel_links(subgram)
+    SubgramList[user_id] = links  # перезаписываем старые данные
+    print(f"[UPDATED] SubgramList for {user_id}: {SubgramList[user_id]}")
     task = await get_first_available_task(callback.from_user.id)  # Получаем список доступных заданий
 
     if not task:
-        await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        await test_subgram(callback.message,state,callback.from_user.id)
         await callback.answer()
         return
     if task.type == 'subscribe':
