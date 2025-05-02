@@ -35,6 +35,7 @@ async def test_subgram(message:Message,state:FSMContext,id):
     await state.clear()
     print(f"[TEST_HANDLER ]USERID   :_____ {message.from_user.id}")
     all_links = SubgramList.get(id, [])
+    print(f"[DEBUG] SubgramList полностью: {SubgramList}")
     links = [item for item in all_links if not item.get("complete", False)]
     print(f'LINKS:______{links}')
     index = 0
@@ -52,6 +53,8 @@ async def test_subgram(message:Message,state:FSMContext,id):
         text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
     elif type =='bot':
         text += f"• <b>Запустите бота</b> <a href='{link}'>{link}</a>\n"
+    else:
+        text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
     text += f"• <b>Награда:</b> {reward}⭐"
     #await state.update_data(task = task)
     #reward = await count_reward(message.from_user.id)
@@ -67,16 +70,25 @@ async def complete_subgram_task_handler(callback:CallbackQuery,state:FSMContext)
     user_id = callback.from_user.id
     check = await Subgram.check_subscribe(link,user_id)
     links = SubgramList.get(user_id, [])
-    if check == True:
+    print(f"[DEBUG] SubgramList полностью: {SubgramList}")
+    if check == 'subscribed':
+        for item in links:
+            if item.get("link") == link and not item.get("complete", False):
+                item["complete"] = True
+                await Subgram.add_reward_user_subgram(user_id,0.25)
+                await callback.answer('⭐ Вознаграждение зачислено')
+                await skip_subgram_task(callback,state)
+                break
+        else: # Только если ни один item не подошёл (break не сработал)
+            #SubgramList[user_id] = []
+            await callback.answer('Задание уже выполнено или не найдено', show_alert=True)
+    elif check == 'notgetted':
         for item in links:
             if item.get("link") == link:
                 item["complete"] = True
+                await skip_subgram_task(callback,state)
                 break
-        else: # Только если ни один item не подошёл (break не сработал)
-            SubgramList[user_id] = []
-        await Subgram.add_reward_user_subgram(user_id,0.25)
-        await callback.answer('⭐ Вознаграждение зачислено')
-        await skip_subgram_task(callback,state)
+        await callback.answer('Задание уже выполнено или не найдено', show_alert=True)
     else:
         await callback.answer('Вы не выполнили условия',show_alert=True)
 
@@ -85,6 +97,7 @@ async def complete_subgram_task_handler(callback:CallbackQuery,state:FSMContext)
 async def skip_subgram_task(callback:CallbackQuery,state:FSMContext):
     #await callback.message.answer('затронул skip_subgram_task')
     print(f"[SKIP_TASK_HANDLER ]USERID   :_____ {callback.from_user.id}")
+    print(f"[DEBUG] SubgramList полностью: {SubgramList}")
     #from handlers.user import get_task_hander
     await callback.message.delete()
     all_links = SubgramList.get(callback.from_user.id, [])
@@ -108,6 +121,8 @@ async def skip_subgram_task(callback:CallbackQuery,state:FSMContext):
         text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
     elif type =='bot':
         text += f"• <b>Запустите бота</b> <a href='{link}'>{link}</a>\n"
+    else:
+        text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
     text += f"• <b>Награда:</b> {reward}⭐"
     await state.update_data(index=index)
     await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True,reply_markup= keyboard)
@@ -116,6 +131,7 @@ async def skip_subgram_task(callback:CallbackQuery,state:FSMContext):
 async def get_task_hander(message: Message,state: FSMContext,id):
     #await message.answer('затронул get_task_hander')
     print(f"[GET_TASK_HANDLER ]USERID   :_____ {message.from_user.id}")
+    print(f"[DEBUG] SubgramList полностью: {SubgramList}")
     task = await get_first_available_task(id)  # Получаем список доступных заданий
     data = await state.get_data()
     index = data.get('index')   

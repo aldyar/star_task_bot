@@ -92,9 +92,9 @@ class SubGramFunction:
                 sponsors = response_data.get("additional", {}).get("sponsors", [])
                 for sponsor in sponsors:
                     print(f"Checking sponsor: {sponsor}")
-                    if sponsor.get("status") == "subscribed":
-                        return True
-                return False
+                    result = sponsor.get("status")
+                    print (result)
+                    return result
             else:
                 print(f"Error: {resp.status}")
                 

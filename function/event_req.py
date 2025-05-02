@@ -146,10 +146,13 @@ class EventFunction:
             event.active = False
             # Можешь тут добавить уведомление в канал или в лог
             for admin in ADMIN:
-                await bot.send_message(
+                try:
+                    await bot.send_message(
                 admin,  # ID администратора
                 f"Конкурс завершён! \nID Конкурса: {event.id}\nДата окончания: {event.end_date}\n\nОн был автоматически отключён."
             )
+                except Exception as e:
+                    print(f'ADMIN {admin} не удалось отпарвить ')
             await EventFunction.end_event_and_reward_users(bot,event.id)
         if expired_events:
             await session.commit()
@@ -241,9 +244,11 @@ class EventFunction:
 
         winner_text = "🏆 Итоги конкурса:\n\n" + "\n".join(winners)
         for admin in ADMIN:
-            await bot.send_message(admin, winner_text)
-            print(f"[16] Итоги конкурса отправлены админу.")
-
+            try:
+                await bot.send_message(admin, winner_text)
+                print(f"[16] Итоги конкурса отправлены админу.")
+            except Exception as e:
+                print(f'ADMIN {admin} не удалось отпарвить ')
 
     @connection
     async def check_active_event_by_id(session,event_id):

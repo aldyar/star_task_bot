@@ -1,6 +1,6 @@
 from sqlalchemy import ForeignKey, String, BigInteger, DateTime, Boolean, Float, Integer
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
-from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine, AsyncSession
 from datetime import datetime
 from sqlalchemy import JSON
 
@@ -9,7 +9,7 @@ engine = create_async_engine(url='sqlite+aiosqlite:///db.sqlite3',
                              echo=True)
     
     
-async_session = async_sessionmaker(engine)
+async_session = async_sessionmaker(engine,class_=AsyncSession)
 
 
 class Base(AsyncAttrs, DeclarativeBase):

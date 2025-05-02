@@ -17,6 +17,18 @@ from database.models import async_main
 from database.requests import create_config,check_subscriptions
 #from handlers.middleware import SubscriptionMiddleware  # Импорт мидлвара
 from database.asyncio_task import event_watcher
+
+
+from app.api import app as fastapi_app
+from uvicorn import Config, Server
+
+
+async def start_fastapi():
+    config = Config(app=fastapi_app, host="0.0.0.0", port=5000, log_level="info")
+    server = Server(config)
+    await server.serve()
+
+
 async def main():
     bot = Bot(token=TOKEN)
     dp = Dispatcher()
@@ -30,12 +42,15 @@ async def main():
                        user, user_profile, user_top,user_subgram)
     dp.startup.register(on_startup)
 
+    # await asyncio.gather(
+    #     dp.start_polling(bot),
+    #     start_fastapi()
+    # )
     await dp.start_polling(bot)
-
 async def on_startup(bot:Bot):
     await async_main()
     await create_config() 
-    #asyncio.create_task(check_subscriptions(bot))
+    #asyncio.create_task(check_subscriptions(bot=bot))
     asyncio.create_task(event_watcher(bot))
 
     

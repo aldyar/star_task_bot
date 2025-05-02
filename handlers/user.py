@@ -6,7 +6,7 @@ import app.keyboards as kb
 from database.requests import (set_user, get_config, get_bonus_update, update_bonus, check_tasks, get_user, 
                                    get_withdraw_limit, set_referrer_id, create_transaction, get_task,
                                    is_user_subscribed,completed_task,create_task_completions_history,check_subscriptions,
-                                   check_user,insert_message_id, count_reward,join_request,skip_task,get_task_about_taskid)
+                                   check_user,insert_message_id, count_reward,join_request,skip_task,get_task_about_taskid,test_fuck_func)
 from function.task_req import get_first_available_task,skip_task_function,create_task_state,get_task_state,create_task_history,check_entry_task_history
 from app.keyboards import withdraw_inline, withdraw_keyboard
 from aiogram.enums import ChatAction
@@ -25,6 +25,8 @@ from handlers.user_subgram import test_subgram
 from function.subgram_req import SubGramFunction as Subgram
 from app.storage import SubgramList
 from app.storage import BotEntry
+from aiogram.types import ChatMember
+
 
 image_start = 'images/image_start.jpg'
 image_ref = 'images/image_ref.jpg'
@@ -340,9 +342,11 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
     links = await Subgram.get_unsubscribed_channel_links(subgram)
     SubgramList[user_id] = links  # перезаписываем старые данные
     print(f"[UPDATED] SubgramList for {user_id}: {SubgramList[user_id]}")
+
     task = await get_first_available_task(callback.from_user.id)  # Получаем список доступных заданий
 
     if not task:
+        #await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
         await test_subgram(callback.message,state,callback.from_user.id)
         await callback.answer()
         return
@@ -487,17 +491,22 @@ async def fail_callback(callback: CallbackQuery):
 ###########################################################################################################################
 ###########################################################################################################################
 
+from aiogram.enums.chat_member_status import ChatMemberStatus
+from aiogram.exceptions import TelegramBadRequest
 
 
-@user.message(F.text == ("test"))
+@user.message(F.text == "test")
 async def check_admin_handler(message: Message, bot: Bot):
-    user_id = message.from_user.id
-    premium = message.from_user.is_premium
-    name = message.from_user.first_name 
-    print(f"Пользователь: {name}, Премиум статус: {premium}")
+    now = datetime.now()
+    seven_days_ago = now - timedelta(days=7)
+    await message.answer(f'NOW: {now}\n 7:{seven_days_ago}')
+    await test_fuck_func(bot)
+    await message.answer(f'OK')
 
-
-
+@user.message(F.text == "test2")
+async def check_admin_handler(message: Message, bot: Bot):
+    await check_subscriptions(bot)
+    await message.answer(f'OK')
 
 @user.chat_join_request()
 async def handle_join_request(update: types.ChatJoinRequest):

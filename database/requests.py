@@ -410,7 +410,7 @@ async def is_user_subscribed(bot: Bot, user_id: int, chat_id) -> bool:
         return is_subscribed
         
     except TelegramBadRequest as e:
-        #print(f"Ошибка при проверке подписки: {e}")
+        print(f"Ошибка при проверке подписки: {e}")
         return False
     
 
@@ -445,76 +445,166 @@ async def send_notification(bot: Bot, user_id: int, text: str):
     except Exception as e:
         print(f"Ошибка при отправке уведомления пользователю {user_id}: {e}")
 
+import time
 
 @connection
 async def check_subscriptions(session, bot: Bot):
     while True:
+        #await bot.send_message(chat_id=1075213318, text='СТАРТ')
+        start_time = time.time()
         now = datetime.now()
         seven_days_ago = now - timedelta(days=7)
-
-        #print(f"\n--- Проверка подписок начата. Время: {now} ---")
-
+        penalty_count = 0
+        penalty_entries = []  
         try:
-            # Получаем все записи TaskCompletion
-            task_completions = await session.execute(
-                select(TaskCompletion)
-                .where(TaskCompletion.completed >= seven_days_ago)
+            result = await session.execute(
+                select(TaskCompletion).where(TaskCompletion.completed >= seven_days_ago)
             )
-            task_completions = task_completions.scalars().all()
-            #print(f"Найдено записей для проверки: {len(task_completions)}")
+            task_completions = result.scalars().all()
+            #await bot.send_message(chat_id=1075213318, text=f'Найдено {len(task_completions)} записей')
 
-            for task_completion in task_completions:
-                user_id = task_completion.tg_id
-                task = await session.scalar(select(Task).where(Task.id == task_completion.task_id))
-                
-                if not task:
-                    #print(f"Задание с ID {task_completion.task_id} не найдено.")
-                    continue
-                elif task.type == 'BotEntry':
-                    continue
-                #print(f"\nПроверка пользователя {user_id} на подписку на канал {task.link}")
+            # Загружаем все нужные Task'и одним запросом
+            task_ids = {tc.task_id for tc in task_completions}
+            task_result = await session.execute(select(Task).where(Task.id.in_(task_ids)))
+            tasks = {task.id: task for task in task_result.scalars()}
 
-                try:
-                    is_subscribed = await is_user_subscribed(bot, user_id, task.chat_id)
-                    #print(f"Результат проверки подписки: {is_subscribed}")
-                except Exception as e:
-                    #print(f"Ошибка при проверке подписки пользователя {user_id}: {e}")
-                    continue
+            # Готовим пары (tg_id, chat_id)
+            user_channel_pairs = []
+            for tc in task_completions:
+                task = tasks.get(tc.task_id)
+                if task and task.type != 'BotEntry':
+                    user_channel_pairs.append((tc.tg_id, task.chat_id))
 
-                if not is_subscribed and task_completion.is_subscribed:
-                    user = await session.scalar(select(User).where(User.tg_id == user_id))
-                    task_history = await session.scalar(select(TaskHistory).where(TaskHistory.tg_id == user_id,TaskHistory.task_id == task.id))
-                    channel_username = task.link.split("t.me/")[-1].strip("/")
-                    text = (
-                            f"❌ *Вы только что отписались от канала* [@{task.title}]({task.link}) *и нарушили условие задания №{task.id}!*\n\n"
-                            f"   *• С баланса в боте списано {task.reward}⭐*\n\n"
-                            f"*Больше не отписывайтесь от каналов в заданиях, чтобы не получать штрафы!*"
+            # Проверяем подписки пачкой
+            subs_map = await batch_check_subscriptions(bot, user_channel_pairs)
+
+            BATCH_SIZE = 50
+            for i in range(0, len(task_completions), BATCH_SIZE):
+                batch = task_completions[i:i + BATCH_SIZE]
+                for tc in batch:
+                    try:
+                        task = tasks.get(tc.task_id)
+                        if not task or task.type == 'BotEntry':
+                            continue
+
+                        is_subscribed = subs_map.get((tc.tg_id, task.chat_id), True)
+                        if not is_subscribed and tc.is_subscribed:
+                            penalty_count += 1
+                            penalty_entries.append(f'tc.id={tc.id}, tg_id={tc.tg_id}, task_id={tc.task_id}')
+                            user = await session.scalar(select(User).where(User.tg_id == tc.tg_id))
+                            task_history = await session.scalar(
+                                select(TaskHistory).where(
+                                    TaskHistory.tg_id == tc.tg_id,
+                                    TaskHistory.task_id == task.id
+                                )
                             )
-                    await bot.send_message(chat_id=user_id, text=text,parse_mode='Markdown', disable_web_page_preview=True)
 
-                    if user:
-                        user.balance -= task.reward
-                        task_completion.is_subscribed = False
-                        await session.delete(task_history)
-                        await session.delete(task_completion)
-                        await session.commit()
-                """elif is_subscribed and not task_completion.is_subscribed:
-                    user = await session.scalar(select(User).where(User.tg_id == user_id))
-                    channel_username = task.link.split("t.me/")[-1].strip("/")
-                    text = (
-                            f"✅ *Спасибо за повторную подписку на канал* [@{task.title}]({task.link})!\n\n"
-                            f"   *• На ваш баланс в боте добавлено {task.reward}⭐️*\n\n"
-                            f"*Продолжайте оставаться подписанным, чтобы не терять свои баллы!*"
+                            text = (
+                                f"❌ *Вы только что отписались от канала* [@{task.title}]({task.link}) "
+                                f"*и нарушили условие задания №{task.id}!*\n\n"
+                                f"   *• С баланса в боте списано {task.reward}⭐*\n\n"
+                                f"*Больше не отписывайтесь от каналов в заданиях, чтобы не получать штрафы!*"
                             )
-                    await bot.send_message(chat_id=user_id, text=text, parse_mode='Markdown', disable_web_page_preview=True)
+                            if user:
+                                #await bot.send_message(chat_id=1075213318, text=f"Обновляю баланс для {tc.tg_id}, списание⭐")
+                                user.balance -= task.reward
+                                tc.is_subscribed = False
+                                if task_history:
+                                    #await bot.send_message(chat_id=1075213318, text=f"Удаляю историю для {tc.tg_id}, task_id={task.id}")
+                                    await session.delete(task_history)
+                                #await bot.send_message(chat_id=1075213318, text=f"Удаляю task_completion для {tc.tg_id}, task_id={task.id}")
+                                await session.delete(tc)
+                                await session.flush()
 
-                    if user:
-                        user.balance += task.reward
-                        task_completion.is_subscribed = True
-                        await session.commit()"""
+                            try:
+                                await bot.send_message(chat_id=tc.tg_id, text=text, parse_mode='Markdown', disable_web_page_preview=True)
+                            except Exception as e:
+                                #await bot.send_message(chat_id=1075213318,text=f"Не смог отправить сообщение пользователю {tc.tg_id}: {e}")
+                                continue
+
+                            
+
+                    except Exception as e:
+                        #await bot.send_message(chat_id=1075213318,text =f"Ошибка при обработке task_completion id={tc.id}: {e}")
+                        print(f"Ошибка при обработке task_completion id={tc.id}: {e}")
+                        continue
+
+                #await bot.send_message(chat_id=1075213318, text=f'Обработано {i + len(batch)} из {len(task_completions)}')
+            await session.commit()
+            #await bot.send_message(chat_id=1075213318, text=f'🔁 Всего зашли в штрафной блок: {penalty_count}')
+            chunk_size = 50
+            for i in range(0, len(penalty_entries), chunk_size):
+                chunk = penalty_entries[i:i + chunk_size]
+                mess = "❌ Штрафы:\n" + "\n".join(chunk)
+                #await bot.send_message(chat_id=1075213318, text=mess)
+
         except Exception as e:
-            print(f"Ошибка при выполнении запроса к БД: {e}")
+            #await bot.send_message(chat_id=1075213318, text=f'Ошибка БД: {e}')
+            print(f'Ошибка БД: {e}')
+        elapsed_time = time.time() - start_time
+        #await bot.send_message(chat_id=1075213318, text=f'Завершено за {elapsed_time:.2f} сек.')
         await asyncio.sleep(3)
+
+
+
+
+async def batch_check_subscriptions(bot: Bot, user_channel_pairs: list[tuple[int, int]]) -> dict[tuple[int, int], bool]:
+    result = {}
+    for user_id, channel_id in user_channel_pairs:
+        try:
+            member = await bot.get_chat_member(chat_id=channel_id, user_id=user_id)
+            result[(user_id, channel_id)] = member.status not in ('left', 'kicked')
+        except Exception:
+            result[(user_id, channel_id)] = False
+    return result
+
+@connection
+async def test_fuck_func(session,bot: Bot):
+    await bot.send_message(chat_id=1075213318, text='СТАРТ')
+    start_time = time.time()  # Начинаем таймер
+    tg_id =1075213318
+    task_id = 7
+    now = datetime.now()
+    seven_days_ago = now - timedelta(days=7)
+    task_completions = await session.execute(
+    select(TaskCompletion)
+    .where(
+        TaskCompletion.completed >= seven_days_ago,
+        TaskCompletion.tg_id == 1075213318
+    )
+)
+    task_completions = task_completions.scalars().all()
+    for task_completion in task_completions:
+        task = await session.scalar(select(Task).where(Task.id == task_completion.task_id))
+        if not task:
+                #print(f"Задание с ID {task_completion.task_id} не найдено.")
+                continue
+        elif task.type == 'BotEntry':
+                continue
+        is_subscribed = await is_user_subscribed(bot, tg_id, task.chat_id)
+        if not is_subscribed and task_completion.is_subscribed:
+                user = await session.scalar(select(User).where(User.tg_id == tg_id))
+                task_history = await session.scalar(select(TaskHistory).where(TaskHistory.tg_id == tg_id, TaskHistory.task_id == task.id))
+        
+                text = (
+                        f"❌ *Вы только что отписались от канала* [@{task.title}]({task.link}) *и нарушили условие задания №{task.id}!*\n\n"
+                        f"   *• С баланса в боте списано {task.reward}⭐*\n\n"
+                        f"*Больше не отписывайтесь от каналов в заданиях, чтобы не получать штрафы!*"
+                        )
+                try:
+                    await bot.send_message(chat_id=tg_id, text=text, parse_mode='Markdown', disable_web_page_preview=True)
+                except Exception as e:
+                    print(f"Пользователь {tg_id} {e}")
+                    continue
+                if user:
+                    user.balance -= task.reward
+                    task_completion.is_subscribed = False
+                    await session.delete(task_history)
+                    await session.delete(task_completion)
+                    await session.commit()
+                end_time = time.time()  # Останавливаем таймер
+                elapsed_time = end_time - start_time  # Вычисляем продолжительность
+                await bot.send_message(chat_id=1075213318, text=str(elapsed_time), parse_mode='Markdown', disable_web_page_preview=True)
 
 
 @connection

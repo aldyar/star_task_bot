@@ -106,3 +106,10 @@ class UserFunction:
     async def get_all_users(session):
         users = await session.scalars(select(User))
         return users.all()
+    
+    @connection
+    async def user_away_reward(session,user_id,reward):
+        user = await session.scalar(select(User).where(User.tg_id == user_id))
+        if user:
+            user.balance -= reward
+            await session.commit()
