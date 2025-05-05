@@ -21,10 +21,10 @@ from aiogram import types
 from aiogram.types import FSInputFile
 import asyncio
 from function.channel_req import StartChannelFunction as Channel
-from handlers.user_subgram import test_subgram
+from handlers.user_subgram import test_subgram, test_subgram2
 from function.subgram_req import SubGramFunction as Subgram
 from app.storage import SubgramList
-from app.storage import BotEntry
+from app.storage import BotEntry, s_reward
 from aiogram.types import ChatMember
 
 
@@ -93,10 +93,19 @@ async def get_task_hander(message: Message,state: FSMContext):
     user_id = message.from_user.id
     premium = int(message.from_user.is_premium or 0)
     name = message.from_user.first_name 
-    subgram = await Subgram.send_post(user_id,name,premium)
-    links = await Subgram.get_unsubscribed_channel_links(subgram)
-    SubgramList[user_id] = links  # перезаписываем старые данные
-    print(f"[UPDATED] SubgramList for {user_id}: {SubgramList[user_id]}")
+    try:
+        subgram = await asyncio.wait_for(Subgram.send_post(user_id,name,premium), timeout=3)
+        links = await Subgram.get_unsubscribed_channel_links(subgram)
+        SubgramList[user_id] = links
+        unsubscribed_count = len(links)
+        subgram_reward = unsubscribed_count * s_reward
+        print(f'SUBGRAM REWARD:________{subgram_reward}')
+        print(f'UNSUB:____________{unsubscribed_count}')
+        print(f"[UPDATED] SubgramList for {user_id}: {SubgramList[user_id]}")
+    except TimeoutError:
+        SubgramList[user_id] = []
+        subgram_reward = 0
+        print(f"[TIMEOUT] Subgram request for {user_id} took too long.")
 
     task = await get_first_available_task(message.from_user.id)  # Получаем список доступных заданий
     photo =FSInputFile(image_task)
@@ -113,7 +122,8 @@ async def get_task_hander(message: Message,state: FSMContext):
         text += f"• <b>Подпишись на</b> <a href='{task.link}'>{task.link}</a>\n"
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await state.update_data(task = task)
-        reward = await count_reward(message.from_user.id)
+        task_reward = await count_reward(message.from_user.id)
+        reward = task_reward + subgram_reward
         await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.complete_task_inline(task.link)
@@ -128,7 +138,8 @@ async def get_task_hander(message: Message,state: FSMContext):
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await state.update_data(task = task)
         await create_task_state(message.from_user.id,task.id)
-        reward = await count_reward(message.from_user.id)
+        task_reward = await count_reward(message.from_user.id)
+        reward = task_reward + subgram_reward
         await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.entry_type_inline(task.link)
@@ -142,7 +153,8 @@ async def get_task_hander(message: Message,state: FSMContext):
         text += f"• <b>Перейдите в бота</b> <a href='{task.link}'>{task.link}</a>\n"
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await state.update_data(task = task)
-        reward = await count_reward(message.from_user.id)
+        task_reward = await count_reward(message.from_user.id)
+        reward = task_reward + subgram_reward
         await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.complete_task_inline(task.link)
@@ -163,7 +175,7 @@ async def skip_task_handler(callback:CallbackQuery,state:FSMContext):
         await callback.message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
         return
     elif task == 3:
-        return await test_subgram(callback.message,state,callback.from_user.id)
+        return await test_subgram2(callback.message,state,callback.from_user.id)
     if task.type == 'subscribe':
     
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
@@ -254,7 +266,7 @@ async def complete_task_handler(callback: CallbackQuery, bot: Bot, state: FSMCon
     await state.update_data(task=task)
 
     if not task:
-        await test_subgram(callback.message,state,callback.from_user.id)
+        await test_subgram2(callback.message,state,callback.from_user.id)
         return
 
     # Отправляем новое задание
@@ -338,10 +350,17 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
     user_id = callback.from_user.id
     premium = int(callback.from_user.is_premium or 0)
     name = callback.from_user.first_name 
-    subgram = await Subgram.send_post(user_id,name,premium)
-    links = await Subgram.get_unsubscribed_channel_links(subgram)
-    SubgramList[user_id] = links  # перезаписываем старые данные
-    print(f"[UPDATED] SubgramList for {user_id}: {SubgramList[user_id]}")
+    try:
+        subgram = await asyncio.wait_for(Subgram.send_post(user_id, name, premium), timeout=3)
+        links = await Subgram.get_unsubscribed_channel_links(subgram)
+        SubgramList[user_id] = links
+        unsubscribed_count = len(links)
+        subgram_reward = unsubscribed_count * s_reward
+        print(f"[UPDATED] SubgramList for {user_id}: {SubgramList[user_id]}")
+    except TimeoutError:
+        SubgramList[user_id] = []
+        subgram_reward = 0
+        print(f"[TIMEOUT] Subgram request for {user_id} took too long.")
 
     task = await get_first_available_task(callback.from_user.id)  # Получаем список доступных заданий
 
@@ -359,7 +378,8 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
         text += f"• <b>Подпишись на</b> <a href='{task.link}'>{task.link}</a>\n"
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await state.update_data(task = task)
-        reward = await count_reward(callback.from_user.id)
+        task_reward = await count_reward(callback.from_user.id)
+        reward = task_reward + subgram_reward
         await callback.message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.complete_task_inline(task.link)
@@ -374,7 +394,8 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await state.update_data(task = task)
         await create_task_state(callback.from_user.id,task.id)
-        reward = await count_reward(callback.from_user.id)
+        task_reward = await count_reward(callback.from_user.id)
+        reward = task_reward + subgram_reward
         await callback.message.answer(f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.entry_type_inline(task.link)
@@ -388,7 +409,8 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
         text += f"• <b>Перейдите в бота</b> <a href='{task.link}'>{task.link}</a>\n"
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await state.update_data(task = task)
-        reward = await count_reward(callback.from_user.id)
+        task_reward = await count_reward(callback.from_user.id)
+        reward = task_reward + subgram_reward
         
         keyboard = await kb.complete_task_inline(task.link)
         await callback.message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)

@@ -12,6 +12,9 @@ from sqlalchemy.sql import exists
 import aiohttp
 from pprint import pprint 
 from config import SUBGRAM_TOKEN
+import asyncio
+
+
 def connection(func):
     async def inner(*args, **kwargs):
         async with async_session() as session:

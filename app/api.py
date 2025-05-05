@@ -55,5 +55,8 @@ async def process_webhook(payload: WebhooksPayload):
                         f"*Больше не отписывайтесь от каналов в заданиях, чтобы не получать штрафы!*"
                         )
         await UserFunction.user_away_reward(hook.user_id,0.25)
-        await bot.send_message(chat_id =hook.user_id, text =text,parse_mode='Markdown', disable_web_page_preview=True)
+        try:
+            await bot.send_message(chat_id=hook.user_id, text=text, parse_mode='Markdown', disable_web_page_preview=True)
+        except Exception as e:
+            print(f'Failed to send message to user {hook.user_id}: {e}')
 

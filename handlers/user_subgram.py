@@ -27,7 +27,9 @@ from function.subgram_req import SubGramFunction as Subgram
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMarkup, InlineKeyboardButton
 from app.storage import SubgramList
 from app.storage import BotEntry
+from app.storage import s_reward
 
+image_task = 'images/image_task.jpg'
 
 
 @user.message(F.text == 'subgram')
@@ -39,6 +41,7 @@ async def test_subgram(message:Message,state:FSMContext,id):
     links = [item for item in all_links if not item.get("complete", False)]
     print(f'LINKS:______{links}')
     index = 0
+    photo =FSInputFile(image_task)
     await state.update_data(index=index)
     if not links:
         return await get_task_hander(message,state,id)
@@ -47,6 +50,8 @@ async def test_subgram(message:Message,state:FSMContext,id):
     type = links[index]["type"]
     complete = SubgramList[id][index]["complete"]
     reward = 0.25
+    unsubscribed_count = len(links)
+    subgram_reward = unsubscribed_count * s_reward
     text = f"🎯 <b>Доступно задание !</b>\n\n"
     keyboard = await kb.inline_subgram(link)
     if type == 'channel':
@@ -58,11 +63,47 @@ async def test_subgram(message:Message,state:FSMContext,id):
     text += f"• <b>Награда:</b> {reward}⭐"
     #await state.update_data(task = task)
     #reward = await count_reward(message.from_user.id)
-    # await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
-    #                         '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
+    await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{subgram_reward}⭐️!*\n\n'
+                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
     #keyboard = await kb.complete_task_inline(task.link)
     await message.answer(text, parse_mode="HTML", disable_web_page_preview=True,reply_markup= keyboard)
 
+
+@user.message(F.text == 'subgram')
+async def test_subgram2(message:Message,state:FSMContext,id):
+    await state.clear()
+    print(f"[TEST_HANDLER ]USERID   :_____ {message.from_user.id}")
+    all_links = SubgramList.get(id, [])
+    print(f"[DEBUG] SubgramList полностью: {SubgramList}")
+    links = [item for item in all_links if not item.get("complete", False)]
+    print(f'LINKS:______{links}')
+    index = 0
+    photo =FSInputFile(image_task)
+    await state.update_data(index=index)
+    if not links:
+        return await get_task_hander(message,state,id)
+
+    link = links[index]["link"]
+    type = links[index]["type"]
+    complete = SubgramList[id][index]["complete"]
+    reward = 0.25
+    unsubscribed_count = len(links)
+    subgram_reward = unsubscribed_count * s_reward
+    text = f"🎯 <b>Доступно задание !</b>\n\n"
+    keyboard = await kb.inline_subgram(link)
+    if type == 'channel':
+        text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
+    elif type =='bot':
+        text += f"• <b>Запустите бота</b> <a href='{link}'>{link}</a>\n"
+    else:
+        text += f"• <b>Подпишись на</b> <a href='{link}'>{link}</a>\n"
+    text += f"• <b>Награда:</b> {reward}⭐"
+    #await state.update_data(task = task)
+    #reward = await count_reward(message.from_user.id)
+    # await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{subgram_reward}⭐️!*\n\n'
+    #                          '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
+    #keyboard = await kb.complete_task_inline(task.link)
+    await message.answer(text, parse_mode="HTML", disable_web_page_preview=True,reply_markup= keyboard)
 
 @user.callback_query(F.data.startswith('SubComplete_'))
 async def complete_subgram_task_handler(callback:CallbackQuery,state:FSMContext):
@@ -138,10 +179,10 @@ async def get_task_hander(message: Message,state: FSMContext,id):
     all_links = SubgramList.get(id, [])
     links = [item for item in all_links if not item.get("complete", False)]
     if not task and not links:
-        await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
+        await message.answer('🫣*Заданий пока нет. Новые задания появятся в течении часа.* 🕰️',parse_mode='Markdown')
         return
     if not task:
-        await test_subgram(message,state,id)
+        await test_subgram2(message,state,id)
         return
     if task.type == 'subscribe':
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
