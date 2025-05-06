@@ -26,6 +26,8 @@ from function.subgram_req import SubGramFunction as Subgram
 from app.storage import SubgramList
 from app.storage import BotEntry, s_reward
 from aiogram.types import ChatMember
+from function.user_req import UserFunction 
+from function.link_req import LinkFunction
 
 
 image_start = 'images/image_start.jpg'
@@ -46,8 +48,13 @@ async def cmd_start(message: Message, state: FSMContext):
     
 
     if len(message.text.split()) > 1:
-        referrer_id = int(message.text.split(maxsplit=1)[1])
+        referrer_id = message.text.split(maxsplit=1)[1]
         await state.update_data(referrer_id=referrer_id)
+        if referrer_id.startswith("admin_"):
+            lang = message.from_user.language_code or "unknown"
+            ref_type = referrer_id.split("_", maxsplit=1)[1]
+            premium = message.from_user.is_premium
+            await LinkFunction.count_link(referrer_id,premium,lang)
     emoji, captcha = random.choice(kb.captchas)  # Выбираем случайную капчу
     channels = await Channel.get_channels()
     text = (
@@ -93,6 +100,10 @@ async def get_task_hander(message: Message,state: FSMContext):
     user_id = message.from_user.id
     premium = int(message.from_user.is_premium or 0)
     name = message.from_user.first_name 
+    user = await get_user(user_id)
+    if not user.gender:
+        await message.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
+        return
     try:
         subgram = await asyncio.wait_for(Subgram.send_post(user_id,name,premium), timeout=3)
         links = await Subgram.get_unsubscribed_channel_links(subgram)
@@ -324,6 +335,9 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
     if subscribed and start_channel_subscribed:
         data = await state.get_data()
         referrer_id = data.get("referrer_id")
+        
+        await LinkFunction.count_done_captcha(referrer_id)
+        
         await callback.answer("✅ Верно! Доступ разрешен.")
         await callback.message.delete()
         user = await callback.bot.get_chat(callback.from_user.id)
@@ -349,7 +363,12 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
 async def task_handler(callback:CallbackQuery, state:FSMContext):
     user_id = callback.from_user.id
     premium = int(callback.from_user.is_premium or 0)
-    name = callback.from_user.first_name 
+    name = callback.from_user.first_name
+    user = await get_user(user_id)
+    if not user.gender:
+        await callback.answer()
+        await callback.message.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
+        return 
     try:
         subgram = await asyncio.wait_for(Subgram.send_post(user_id, name, premium), timeout=3)
         links = await Subgram.get_unsubscribed_channel_links(subgram)
@@ -447,6 +466,8 @@ async def ref_system(message: Message):
 @user.message(F.text == '🎁Вывести звёзды')
 async def withdraw(message:Message):
     user = await get_user(message.from_user.id)
+    username = message.from_user.username
+    await UserFunction.set_username(message.from_user.id,username)
     keyboard = await withdraw_keyboard()
     text = (
         f"*Заработано: {user.balance}⭐️*\n\n"
@@ -461,6 +482,10 @@ async def withdraw(message:Message):
 async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
     value = int(callback.data.removeprefix("withdraw_")) 
     user = await get_user(callback.from_user.id)
+    username = callback.from_user.username
+    await UserFunction.set_username(callback.from_user.id,username)
+    if not user.username:
+        return await callback.answer('Укажите пожалуйста username в профиле Telegram',show_alert=True)
     if user.balance >= value:  
         text = (
     f"*⏳ Заявка на вывод {value}⭐ создана!*\n\n"
@@ -501,6 +526,13 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
         await callback.answer(f'Заработайте еще {amount}⭐, что бы получить подарок!',show_alert=True)
 
 
+@user.callback_query(F.data.startswith('gender_'))
+async def choose_gender_handler(callback:CallbackQuery):
+    await callback.message.delete()
+    gender = callback.data.removeprefix("gender_")
+    await UserFunction.set_gender(callback.from_user.id,gender)
+    await callback.message.answer('*Ваш пол сохранен, нажмите снова на кнопку 🎯Задания*',parse_mode='Markdown')
+
 
 @user.callback_query(F.data == 'void')
 async def fail_callback(callback: CallbackQuery):
@@ -519,11 +551,9 @@ from aiogram.exceptions import TelegramBadRequest
 
 @user.message(F.text == "test")
 async def check_admin_handler(message: Message, bot: Bot):
-    now = datetime.now()
-    seven_days_ago = now - timedelta(days=7)
-    await message.answer(f'NOW: {now}\n 7:{seven_days_ago}')
-    await test_fuck_func(bot)
-    await message.answer(f'OK')
+    lang = message.from_user.language_code or "unknown"
+    await message.answer(f"Вы используете язык: {lang}")
+    print(f"Пользователь {message.from_user.id} premium: {message.from_user.is_premium}")
 
 @user.message(F.text == "test2")
 async def check_admin_handler(message: Message, bot: Bot):

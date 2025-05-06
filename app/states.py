@@ -46,3 +46,6 @@ class Event(StatesGroup):
 class StartChannel(StatesGroup):
     link = State()
     chat_id = State()
+
+class LinkStat(StatesGroup):
+    wait_name = State()

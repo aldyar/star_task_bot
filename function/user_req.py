@@ -113,3 +113,17 @@ class UserFunction:
         if user:
             user.balance -= reward
             await session.commit()
+
+    @connection
+    async def set_username(session,tg_id,username):
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        if user:
+            user.username = username
+            await session.commit()
+
+    @connection
+    async def set_gender(session,tg_id,gender):
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        if user:
+            user.gender = gender
+            await session.commit()

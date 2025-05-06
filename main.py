@@ -9,6 +9,7 @@ from handlers.admin_statistics import admin as admin_stat
 from handlers.admin_start import admin as admin_start
 from handlers.admin_reminder import admin as admin_reminder
 from handlers.admin_event import admin as admin_event
+from handlers.admin_link_stat import admin as admin_link_stat
 from handlers.user import user
 from handlers.user_profile import user as user_profile
 from handlers.user_top import user as user_top
@@ -38,7 +39,7 @@ async def main():
     #dp.callback_query.middleware(SubscriptionMiddleware(bot, CHANNEL_LINK))
 
     # Регистрация роутеров
-    dp.include_routers(admin_router, admin_ref_router, admin_withdraw, admin_bonus, admin_stat,admin_start ,admin_reminder,admin_event, 
+    dp.include_routers(admin_router, admin_ref_router, admin_withdraw, admin_bonus, admin_stat,admin_start ,admin_reminder,admin_event,admin_link_stat, 
                        user, user_profile, user_top,user_subgram)
     dp.startup.register(on_startup)
 
@@ -48,6 +49,7 @@ async def main():
     # )
     await dp.start_polling(bot)
 async def on_startup(bot:Bot):
+    print('✅BOT STARTED')
     await async_main()
     await create_config() 
     #asyncio.create_task(check_subscriptions(bot=bot))

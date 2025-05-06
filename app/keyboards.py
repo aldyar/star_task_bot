@@ -105,7 +105,8 @@ async def withdraw_edit_req():
 edit_bonus = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить',callback_data='editbonus')]])
 
 stat_edit = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Сортировать по дате(Регистрация)',callback_data='NumDate_reg')],
-                                                  [InlineKeyboardButton(text = '✏️Сортировать по дате(Количество привлеченных)',callback_data='NumDate_ref')]])
+                                                  [InlineKeyboardButton(text = '✏️Сортировать по дате(Количество привлеченных)',callback_data='NumDate_ref')],
+                                                  [InlineKeyboardButton(text = '🔗 Ссылки',callback_data='LinkStat')]])
 
 inline_task_type = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Подписка',callback_data= 'subscribe')],
                                                          [InlineKeyboardButton(text = 'Заявка', callback_data = 'entry')],
@@ -157,3 +158,10 @@ async def inline_subgram(link):
                                                         InlineKeyboardButton(text = '✅Выполнил', callback_data=f'SubComplete_{link}')],
                                                         [InlineKeyboardButton(text = '⏩Пропустить', callback_data= 'SkipSubgram')]])
     return inline_subgram
+
+inline_choose_gender = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '🙎🏼‍♂️ Мужской',callback_data='gender_male'),
+                                                              InlineKeyboardButton(text = '🙍🏼‍♀️ Женский', callback_data='gender_female')]])
+
+
+inline_link_stat = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Создать ссылку',callback_data='CreateLink')],
+                                                         [InlineKeyboardButton(text = 'Список ссылок', callback_data='LinkList')]])

@@ -6,7 +6,7 @@ from sqlalchemy import JSON
 
 
 engine = create_async_engine(url='sqlite+aiosqlite:///db.sqlite3',
-                             echo=True)
+                             echo=False)
     
     
 async_session = async_sessionmaker(engine,class_=AsyncSession)
@@ -28,6 +28,7 @@ class User(Base):
     register_date: Mapped[datetime] = mapped_column(DateTime,default=datetime.now)
     referral_count: Mapped[int] = mapped_column(Integer,default=0)
     task_count: Mapped[int] = mapped_column(Integer,default=1)
+    gender: Mapped[str] = mapped_column(String,nullable=True)
 
 class Config(Base):
     __tablename__ = 'config'
@@ -129,7 +130,16 @@ class StartChannel(Base):
     title: Mapped[str] = mapped_column(String,nullable=True)    
     link: Mapped[str] = mapped_column(String, nullable=True)
 
-    
+class LinkStat(Base):
+    __tablename__ = 'links_stat'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    link_name: Mapped[str] = mapped_column(String,nullable=True)    
+    clicks: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
+    done_captcha: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
+    premium: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
+    lang: Mapped[str] = mapped_column(String, nullable=True)
+
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
