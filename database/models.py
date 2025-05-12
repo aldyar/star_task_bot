@@ -48,6 +48,8 @@ class Config(Base):
     image_link: Mapped[str] = mapped_column(String,nullable=True)
     reminder_text: Mapped[str] = mapped_column(String ,nullable=True)
     reminder_image:Mapped[str] = mapped_column(String,nullable=True)
+    reminder_text_button:Mapped[str] = mapped_column(String,nullable=True)
+    reminder_url_button:Mapped[str] = mapped_column(String,nullable=True)
 
 
 class Task(Base):

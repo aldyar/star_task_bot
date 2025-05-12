@@ -30,7 +30,9 @@ class Date(StatesGroup):
 class Reminder(StatesGroup):
     wait_text = State()
     wait_image = State()
-
+    wait_button_text = State()
+    wait_button_url = State()
+    
 class Event(StatesGroup):
     wait_c1 = State()
     wait_c2 = State()

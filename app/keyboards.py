@@ -124,6 +124,7 @@ next_task_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(t
 
 inline_admin_reminder = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить текст', callback_data='ResetTextReminder')],
                                                               [InlineKeyboardButton(text = 'Изменить картинку', callback_data= 'ResetImageReminder')],
+                                                              [InlineKeyboardButton(text = 'Изменить кнопку',callback_data='ResetButton')],
                                                               [InlineKeyboardButton(text = 'Опубликовать',callback_data='SendReminder')]])
 
 
@@ -165,3 +166,10 @@ inline_choose_gender = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButt
 
 inline_link_stat = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Создать ссылку',callback_data='CreateLink')],
                                                          [InlineKeyboardButton(text = 'Список ссылок', callback_data='LinkList')]])
+
+inline_reminder_edit_button = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить кнопку', callback_data='ReminderTextButton')],
+                                                                    [InlineKeyboardButton(text = 'Удалить кнопку',callback_data='ReminderDeleteButton')]])
+
+async def inline_remider_button(text,url):
+    inline_remider_button = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = text,url = url)]])
+    return inline_remider_button

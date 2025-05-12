@@ -56,13 +56,29 @@ class ReminderFunction:
             await session.commit()
 
 
+    @connection
+    async def get_config(session):
+        config = await session.scalar(select(Config))
+        if config:
+            return config
 
 
+    @connection
+    async def set_button_data(session,text,url):
+        config = await session.scalar(select(Config))
+        if config:
+            config.reminder_text_button = text
+            config.reminder_url_button = url
 
+            await session.commit()
 
-
-
-
+    @connection
+    async def delete_button_data(session):
+        config = await session.scalar(select(Config))
+        if config:
+            config.reminder_text_button = None
+            config.reminder_url_button = None
+            await session.commit()
 
 
 

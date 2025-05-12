@@ -29,7 +29,8 @@ class Admin(Filter):
     
 
 @admin.message(Admin(), F.text == 'Напоминание')
-async def reminder_handler(message:Message):
+async def reminder_handler(message:Message,state:FSMContext):
+    await state.clear()
     await message.answer('*Выберите что хотите поменять:*',parse_mode='Markdown',reply_markup=kb.inline_admin_reminder)
 
 
@@ -173,7 +174,10 @@ async def send_reminder(callback:CallbackQuery, bot: Bot):
     users = await User.get_all_users()
     user_ids = [user.tg_id for user in users]
     text = await Reminder.get_config_reminder_text()
-    image_url = await Reminder.get_config_reminder_image()        
+    image_url = await Reminder.get_config_reminder_image()     
+    config = await Reminder.get_config()
+    if config.reminder_text_button:   
+        keyboard = await kb.inline_remider_button(config.reminder_text_button,config.reminder_url_button)
     total_users = len(user_ids)
     success_count = 0
     blocked_count = 0
@@ -189,13 +193,15 @@ async def send_reminder(callback:CallbackQuery, bot: Bot):
                     user_id,
                     photo=photo,
                     caption=text,
-                    parse_mode="HTML"
+                    parse_mode="HTML",
+                    reply_markup = keyboard if config.reminder_text_button else None
                 )
             else:
                 await bot.send_message(
                     user_id,
                     text,
-                    parse_mode="HTML"
+                    parse_mode="HTML",
+                    reply_markup = keyboard if config.reminder_text_button else None
                 )
             success_count += 1
         except TelegramForbiddenError:  # Пользователь заблокировал бота
@@ -212,3 +218,51 @@ async def send_reminder(callback:CallbackQuery, bot: Bot):
         f"🚫 Пользователей заблокировали бота: {blocked_count}\n"
         f"❌ Ошибки: {failed_count}"
     )
+
+
+@admin.callback_query(F.data == 'ResetButton')
+async def edit_button_handler(callback:CallbackQuery):
+    await callback.message.delete()
+    config = await Reminder.get_config()
+    if not config.reminder_text_button:
+        text = ('*У вас нет активной кнопки*')
+    else:
+        text = (f"""
+*Текст кнопки:* `{config.reminder_text_button}`\n
+*Ссылка кнопки:* `{config.reminder_url_button}`
+""")
+    await callback.message.answer(text,parse_mode='Markdown',reply_markup=kb.inline_reminder_edit_button)
+
+
+@admin.callback_query(F.data == 'ReminderTextButton')
+async def remider_edit_button(callback:CallbackQuery,state:FSMContext):
+    await callback.answer()
+    await callback.message.answer('*Введите пожалуйста текст кнопки...*',parse_mode='Markdown')
+    await state.set_state(ReminderState.wait_button_text)
+
+
+@admin.message(ReminderState.wait_button_text)
+async def process_button_text(message:Message,state:FSMContext):
+    text = message.text
+    await state.update_data(text=text)
+
+    await message.answer('*Введите пожалуйста ссылку...*',parse_mode='Markdown')
+    await state.set_state(ReminderState.wait_button_url)
+
+
+@admin.message(ReminderState.wait_button_url)
+async def process_button_url(message:Message,state:FSMContext):
+    url = message.text
+    data = await state.get_data()
+    text = data.get('text')
+    await Reminder.set_button_data(text,url)
+
+    await message.answer('✅*Кнопка успешно добавлена*',parse_mode='Markdown')
+    await state.clear()
+
+
+@admin.callback_query(F.data == 'ReminderDeleteButton')
+async def delete_button_data(callback:CallbackQuery):
+    await Reminder.delete_button_data()
+    await callback.answer()
+    await callback.message.answer('*Кнопка успешно удалена*',parse_mode='Markdown')
