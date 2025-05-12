@@ -24,7 +24,7 @@ def connection(func):
 
 class SubGramFunction:
 
-    async def send_post(user_id,name,premium):
+    async def send_post(user_id,name,premium,gender):
         url = "https://api.subgram.ru/request-op/"  # заменишь на свой
         headers = {
             "Auth": SUBGRAM_TOKEN
@@ -32,6 +32,7 @@ class SubGramFunction:
         data = {
             "UserId": user_id,
             "ChatId": user_id,
+            "Gender": gender,
             "first_name": name,
             "language_code": "ru",
             "Premium": premium,

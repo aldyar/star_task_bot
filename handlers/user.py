@@ -122,7 +122,7 @@ async def get_task_hander(message: Message,state: FSMContext):
     if not await flyer.check(message.from_user.id,message.from_user.language_code):
         return
     try:
-        subgram = await asyncio.wait_for(Subgram.send_post(user_id,name,premium), timeout=3)
+        subgram = await asyncio.wait_for(Subgram.send_post(user_id,name,premium,user.gender), timeout=3)
         links = await Subgram.get_unsubscribed_channel_links(subgram)
         SubgramList[user_id] = links
         unsubscribed_count = len(links)
@@ -135,11 +135,11 @@ async def get_task_hander(message: Message,state: FSMContext):
         subgram_reward = 0
         print(f"[TIMEOUT] Subgram request for {user_id} took too long.")
 
-    task = await get_first_available_task(message.from_user.id)  # Получаем список доступных заданий
+    task = await get_first_available_task(user_id)  # Получаем список доступных заданий
     photo =FSInputFile(image_task)
     if not task:
         #await message.answer('Заданий пока нет. Задания появятся в ближайшее время.')
-        await test_subgram(message,state,message.from_user.id)
+        await test_subgram(message,state,user_id)
         return
     if task.type == 'subscribe':
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
@@ -165,8 +165,8 @@ async def get_task_hander(message: Message,state: FSMContext):
         text += f"• <b>Подай заявку в канал</b> <a href='{task.link}'>{task.link}</a>\n"
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await state.update_data(task = task)
-        await create_task_state(message.from_user.id,task.id)
-        task_reward = await count_reward(message.from_user.id)
+        await create_task_state(user_id,task.id)
+        task_reward = await count_reward(user_id)
         reward = task_reward + subgram_reward
         await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
@@ -181,15 +181,15 @@ async def get_task_hander(message: Message,state: FSMContext):
         text += f"• <b>Перейдите в бота</b> <a href='{task.link}'>{task.link}</a>\n"
         text += f"• <b>Награда:</b> {task.reward}⭐"
         await state.update_data(task = task)
-        task_reward = await count_reward(message.from_user.id)
+        task_reward = await count_reward(user_id)
         reward = task_reward + subgram_reward
         await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.complete_task_inline(task.link)
         await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
-        BotEntry[message.from_user.id] = False
+        BotEntry[user_id] = False
         await asyncio.sleep(5)
-        BotEntry[message.from_user.id] = True
+        BotEntry[user_id] = True
 
 
 #ЗАДАНИЯ
@@ -389,7 +389,7 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
     if not await flyer.check(callback.from_user.id,callback.from_user.language_code):
         return
     try:
-        subgram = await asyncio.wait_for(Subgram.send_post(user_id, name, premium), timeout=3)
+        subgram = await asyncio.wait_for(Subgram.send_post(user_id, name, premium,user.gender), timeout=3)
         links = await Subgram.get_unsubscribed_channel_links(subgram)
         SubgramList[user_id] = links
         unsubscribed_count = len(links)

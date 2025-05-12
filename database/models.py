@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import JSON
 
 
-engine = create_async_engine(url='sqlite+aiosqlite:///db2.sqlite3',
+engine = create_async_engine(url='sqlite+aiosqlite:///db.sqlite3',
                              echo=False)
     
     
