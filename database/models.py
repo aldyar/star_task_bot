@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import JSON
 
 
-engine = create_async_engine(url='sqlite+aiosqlite:///db.sqlite3',
+engine = create_async_engine(url='sqlite+aiosqlite:///db2.sqlite3',
                              echo=False)
     
     
@@ -139,6 +139,9 @@ class LinkStat(Base):
     done_captcha: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
     premium: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
     lang: Mapped[str] = mapped_column(String, nullable=True)
+    users: Mapped[str] = mapped_column(String, nullable=True)
+    capthca_users: Mapped[str] = mapped_column(String, nullable=True)
+
 
 async def async_main():
     async with engine.begin() as conn:

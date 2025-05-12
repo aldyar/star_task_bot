@@ -43,7 +43,7 @@ flyer = Flyer(FLYER)
 
 
 @user.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext):
+async def cmd_start(message: Message, state: FSMContext,bot:Bot):
     user = await get_user(message.from_user.id)
     if user:  # Если пользователь уже есть в базе данных
         await success_message(message,state)
@@ -57,29 +57,31 @@ async def cmd_start(message: Message, state: FSMContext):
             lang = message.from_user.language_code or "unknown"
             ref_type = referrer_id.split("_", maxsplit=1)[1]
             premium = message.from_user.is_premium
-            await LinkFunction.count_link(referrer_id,premium,lang)
-    if not await flyer.check(message.from_user.id,message.from_user.language_code):
+            await LinkFunction.count_link(referrer_id,premium,lang,message.from_user.id)
+    if not await flyer.check(message.from_user.id,message.from_user.language_code): 
+        return 
+    
+    subscribed = await is_user_subscribed(bot,message.from_user.id,CHANNEL_ID)
+    if not subscribed:
+    #СТАРАЯ КАПЧА            
+        emoji, captcha = random.choice(kb.captchas)  # Выбираем случайную капчу
+        channels = await Channel.get_channels()
+        text = (
+        "🤖 <b>Капча</b>\n\n"
+        "🔵 Подпишись на <a href='https://t.me/FreeStards'>канал</a>\n\n"
+    )
+        if channels:
+            for channel in channels:
+                text += f"🔵 Подпишись на <a href='{channel.link}'>канал</a>\n"
+            text += "\n"  # добавим отступ перед финальной частью
+        text += (
+        f"🔵 Нажми на {emoji} ниже, чтобы начать пользоваться ботом и получать звёзды,\n"
+        "после прохождения начислим тебе 1⭐ на баланс бота:"
+    )
+        photo = FSInputFile(image_welcome)
+        await message.answer_photo(photo,caption=text, reply_markup=captcha, parse_mode="HTML", disable_web_page_preview=True)
         return
     await success_message(message,state)
-
-# #СТАРАЯ КАПЧА            
-#     emoji, captcha = random.choice(kb.captchas)  # Выбираем случайную капчу
-#     channels = await Channel.get_channels()
-#     text = (
-#     "🤖 <b>Капча</b>\n\n"
-#     "🔵 Подпишись на <a href='https://t.me/FreeStards'>канал</a>\n\n"
-# )
-#     if channels:
-#         for channel in channels:
-#             text += f"🔵 Подпишись на <a href='{channel.link}'>канал</a>\n"
-#         text += "\n"  # добавим отступ перед финальной частью
-#     text += (
-#     f"🔵 Нажми на {emoji} ниже, чтобы начать пользоваться ботом и получать звёзды,\n"
-#     "после прохождения начислим тебе 1⭐ на баланс бота:"
-# )
-#     photo = FSInputFile(image_welcome)
-#     await message.answer_photo(photo,caption=text, reply_markup=captcha, parse_mode="HTML", disable_web_page_preview=True)
-
 
 async def success_message(message: Message,state:FSMContext):
     text = await get_config('start_text')
@@ -87,7 +89,7 @@ async def success_message(message: Message,state:FSMContext):
 
     data = await state.get_data()
     referrer_id = data.get("referrer_id")
-    await LinkFunction.count_done_captcha(referrer_id)
+    await LinkFunction.count_done_captcha(referrer_id,message.from_user.id)
     username = message.from_user.username
     await set_user(message.from_user.id, username, referrer_id)
 
@@ -351,7 +353,7 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
         data = await state.get_data()
         referrer_id = data.get("referrer_id")
         
-        await LinkFunction.count_done_captcha(referrer_id)
+        await LinkFunction.count_done_captcha(referrer_id,callback.from_user.id)
         
         await callback.answer("✅ Верно! Доступ разрешен.")
         await callback.message.delete()

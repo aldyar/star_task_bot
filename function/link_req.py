@@ -31,9 +31,15 @@ class LinkFunction:
 
 
     @connection
-    async def count_link(session,link_name,premium,lang):
+    async def count_link(session,link_name,premium,lang,user_id):
+
         link = await session.scalar(select(LinkStat).where(LinkStat.link_name == link_name))
         if link:
+            # --- Проверка user_id в поле users ---
+            existing_users = link.users.split(",") if link.users else []
+            if str(user_id) in existing_users:
+                return  # Уже есть — не продолжаем
+            
             link.clicks +=1
             if premium:
                 link.premium +=1
@@ -53,13 +59,23 @@ class LinkFunction:
 
             # Обратно сохраняем в строку
             link.lang = json.dumps(lang_stats)
+            # Добавление нового user_id в users
+            existing_users.append(str(user_id))
+            link.users = ",".join(existing_users)
             await session.commit()
 
     @connection
-    async def count_done_captcha(session,link_name):
+    async def count_done_captcha(session,link_name,user_id):
         link = await session.scalar(select(LinkStat).where(LinkStat.link_name == link_name))
         if link:
+            # --- Проверка user_id в поле users ---
+            existing_users = link.capthca_users.split(",") if link.capthca_users else []
+            if str(user_id) in existing_users:
+                return  # Уже есть — не продолжаем
             link.done_captcha +=1
+            # Добавление нового user_id в users
+            existing_users.append(str(user_id))
+            link.capthca_users = ",".join(existing_users)
             await session.commit()
 
 
