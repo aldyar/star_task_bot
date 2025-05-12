@@ -33,17 +33,15 @@ async def user_profile_handler(message:Message):
 💰 Баланс: {user.balance}⭐️
 👥 Всего рефералов: {user.referral_count}
 📆 За неделю: {ref_week}
-──────────────
-📜 Реферальный список:
 """
     photo = FSInputFile(image_stat)
     # Если у пользователя есть рефералы
-    if referrals:
-        # Для каждого реферала формируем строку
-        referral_list = "\n".join([f"@{referral.username} (ID: {referral.tg_id})" for referral in referrals])
-        text += referral_list
-    else:
-        text += "Нет приглашённых пользователей."
+    # if referrals:
+    #     # Для каждого реферала формируем строку
+    #     referral_list = "\n".join([f"@{referral.username} (ID: {referral.tg_id})" for referral in referrals])
+    #     text += referral_list
+    # else:
+    #     text += "Нет приглашённых пользователей."
     await message.answer_photo(photo,caption=text,reply_markup=kb.inline_user_profile)
 
 

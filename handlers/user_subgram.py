@@ -49,7 +49,7 @@ async def test_subgram(message:Message,state:FSMContext,id):
     link = links[index]["link"]
     type = links[index]["type"]
     complete = SubgramList[id][index]["complete"]
-    reward = 0.25
+    reward = s_reward
     unsubscribed_count = len(links)
     subgram_reward = unsubscribed_count * s_reward
     text = f"🎯 <b>Доступно задание !</b>\n\n"
@@ -86,7 +86,7 @@ async def test_subgram2(message:Message,state:FSMContext,id):
     link = links[index]["link"]
     type = links[index]["type"]
     complete = SubgramList[id][index]["complete"]
-    reward = 0.25
+    reward = s_reward
     unsubscribed_count = len(links)
     subgram_reward = unsubscribed_count * s_reward
     text = f"🎯 <b>Доступно задание !</b>\n\n"
@@ -116,7 +116,7 @@ async def complete_subgram_task_handler(callback:CallbackQuery,state:FSMContext)
         for item in links:
             if item.get("link") == link and not item.get("complete", False):
                 item["complete"] = True
-                await Subgram.add_reward_user_subgram(user_id,0.25)
+                await Subgram.add_reward_user_subgram(user_id,s_reward)
                 await callback.answer('⭐ Вознаграждение зачислено')
                 await skip_subgram_task(callback,state)
                 break
@@ -155,7 +155,7 @@ async def skip_subgram_task(callback:CallbackQuery,state:FSMContext):
     print(f'LINK____________________{link}')
     type = links[index]["type"]
     complete = SubgramList[callback.from_user.id][index]["complete"]
-    reward = 0.25
+    reward = s_reward
     text = f"🎯 <b>Доступно задание !</b>\n\n"
     keyboard = await kb.inline_subgram(link)
     if type == 'channel':

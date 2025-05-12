@@ -127,3 +127,24 @@ class UserFunction:
         if user:
             user.gender = gender
             await session.commit()
+
+
+    @connection
+    async def save_all(session):
+        users = await session.scalars(select(User.tg_id))
+        ids = users.all()
+        with open("test_ids.txt", "w", encoding="utf-8") as f:
+            for row in ids:
+                f.write(f"{row}\n")
+
+        print("✅ Все ID сохранены в test_ids.txt")
+
+    @connection
+    async def get_tgid_ref_user(session,tg_id):
+        users = await session.scalars(select(User.username).where(User.referrer_id == tg_id))
+        ids = users.all()
+        with open("test_ids.txt", "w", encoding="utf-8") as f:
+            for row in ids:
+                f.write(f"@{row}\n")
+
+        print("✅ Все ID сохранены в test_ids.txt")

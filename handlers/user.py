@@ -15,7 +15,7 @@ import random
 from datetime import datetime, timedelta
 import text as txt
 user = Router()
-from config import ADMIN, GROUP_ID,CHANNEL_ID
+from config import ADMIN, GROUP_ID,CHANNEL_ID,FLYER
 from handlers.admin import start_admin
 from aiogram import types
 from aiogram.types import FSInputFile
@@ -36,6 +36,9 @@ image_withdraw = 'images/image_withdraw.jpg'
 image_welcome = 'images/image_welcome.jpg'
 image_task = 'images/image_task.jpg'
 
+from flyerapi import Flyer
+flyer = Flyer(FLYER)
+
 
 
 
@@ -43,7 +46,7 @@ image_task = 'images/image_task.jpg'
 async def cmd_start(message: Message, state: FSMContext):
     user = await get_user(message.from_user.id)
     if user:  # Если пользователь уже есть в базе данных
-        await success_message(message)
+        await success_message(message,state)
         return
     
 
@@ -55,29 +58,38 @@ async def cmd_start(message: Message, state: FSMContext):
             ref_type = referrer_id.split("_", maxsplit=1)[1]
             premium = message.from_user.is_premium
             await LinkFunction.count_link(referrer_id,premium,lang)
-    emoji, captcha = random.choice(kb.captchas)  # Выбираем случайную капчу
-    channels = await Channel.get_channels()
-    text = (
-    "🤖 <b>Капча</b>\n\n"
-    "🔵 Подпишись на <a href='https://t.me/FreeStards'>канал</a>\n\n"
-)
-    if channels:
-        for channel in channels:
-            text += f"🔵 Подпишись на <a href='{channel.link}'>канал</a>\n"
-        text += "\n"  # добавим отступ перед финальной частью
-    text += (
-    f"🔵 Нажми на {emoji} ниже, чтобы начать пользоваться ботом и получать звёзды,\n"
-    "после прохождения начислим тебе 1⭐ на баланс бота:"
-)
-    photo = FSInputFile(image_welcome)
-    await message.answer_photo(photo,caption=text, reply_markup=captcha, parse_mode="HTML", disable_web_page_preview=True)
+    if not await flyer.check(message.from_user.id,message.from_user.language_code):
+        return
+    await success_message(message,state)
+
+# #СТАРАЯ КАПЧА            
+#     emoji, captcha = random.choice(kb.captchas)  # Выбираем случайную капчу
+#     channels = await Channel.get_channels()
+#     text = (
+#     "🤖 <b>Капча</b>\n\n"
+#     "🔵 Подпишись на <a href='https://t.me/FreeStards'>канал</a>\n\n"
+# )
+#     if channels:
+#         for channel in channels:
+#             text += f"🔵 Подпишись на <a href='{channel.link}'>канал</a>\n"
+#         text += "\n"  # добавим отступ перед финальной частью
+#     text += (
+#     f"🔵 Нажми на {emoji} ниже, чтобы начать пользоваться ботом и получать звёзды,\n"
+#     "после прохождения начислим тебе 1⭐ на баланс бота:"
+# )
+#     photo = FSInputFile(image_welcome)
+#     await message.answer_photo(photo,caption=text, reply_markup=captcha, parse_mode="HTML", disable_web_page_preview=True)
 
 
-async def success_message(message: Message):
+async def success_message(message: Message,state:FSMContext):
     text = await get_config('start_text')
     #image_url = await get_config('image_link')  # Получаем ссылку на изображение
-    
 
+    data = await state.get_data()
+    referrer_id = data.get("referrer_id")
+    await LinkFunction.count_done_captcha(referrer_id)
+    username = message.from_user.username
+    await set_user(message.from_user.id, username, referrer_id)
 
     user_id = message.from_user.id
     referral_link = f"https://t.me/FreeStard_bot?start={user_id}"
@@ -94,6 +106,7 @@ async def success_message(message: Message):
     # await message.answer(' *🎯Выполняй лёгкие задания и лутай халявные звёзды:*',parse_mode="Markdown", reply_markup=kb.task_inline)
 
 
+
 #ЗАДАНИЯ
 @user.message(F.text == '🎯Задания')
 async def get_task_hander(message: Message,state: FSMContext):
@@ -103,6 +116,8 @@ async def get_task_hander(message: Message,state: FSMContext):
     user = await get_user(user_id)
     if not user.gender:
         await message.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
+        return
+    if not await flyer.check(message.from_user.id,message.from_user.language_code):
         return
     try:
         subgram = await asyncio.wait_for(Subgram.send_post(user_id,name,premium), timeout=3)
@@ -369,6 +384,8 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
         await callback.answer()
         await callback.message.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
         return 
+    if not await flyer.check(callback.from_user.id,callback.from_user.language_code):
+        return
     try:
         subgram = await asyncio.wait_for(Subgram.send_post(user_id, name, premium), timeout=3)
         links = await Subgram.get_unsubscribed_channel_links(subgram)
@@ -442,6 +459,8 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
 
 @user.message(F.text == '⭐️Заработать звёзды')
 async def ref_system(message: Message):
+    if not await flyer.check(message.from_user.id,message.from_user.language_code):
+        return
     user_id = message.from_user.id
     referral_link = f"https://t.me/FreeStard_bot?start={user_id}"
     change_text = await get_config('ref_text')
@@ -465,6 +484,8 @@ async def ref_system(message: Message):
 
 @user.message(F.text == '🎁Вывести звёзды')
 async def withdraw(message:Message):
+    if not await flyer.check(message.from_user.id,message.from_user.language_code):
+        return
     user = await get_user(message.from_user.id)
     username = message.from_user.username
     await UserFunction.set_username(message.from_user.id,username)
@@ -549,16 +570,16 @@ from aiogram.enums.chat_member_status import ChatMemberStatus
 from aiogram.exceptions import TelegramBadRequest
 
 
+
 @user.message(F.text == "test")
 async def check_admin_handler(message: Message, bot: Bot):
-    lang = message.from_user.language_code or "unknown"
-    await message.answer(f"Вы используете язык: {lang}")
-    print(f"Пользователь {message.from_user.id} premium: {message.from_user.is_premium}")
+    result = await flyer.check(message.from_user.id,'ru')
+    await message.answer(str(result))
 
 @user.message(F.text == "test2")
 async def check_admin_handler(message: Message, bot: Bot):
-    await check_subscriptions(bot)
-    await message.answer(f'OK')
+    await UserFunction.get_tgid_ref_user(5800173701)
+    print('OK')
 
 @user.chat_join_request()
 async def handle_join_request(update: types.ChatJoinRequest):
