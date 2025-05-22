@@ -68,6 +68,8 @@ async def link_stat_handler(callback:CallbackQuery):
     link = await LinkFunction.get_link(link_name)
     lang_dict = json.loads(link.lang) if link.lang else {}
 
+    flyer_count = link.done_captcha - link.count_captcha
+    
     total_lang_clicks = sum(lang_dict.values())
     geo_text = "\n".join(
         [f"— `{code}`: *{count}* ({round(count / total_lang_clicks * 100, 1)}%)"
@@ -81,6 +83,9 @@ async def link_stat_handler(callback:CallbackQuery):
 👤*Всего зашло*: *{link.clicks}*
 ✅*Прошли капчу: {link.done_captcha}* 
 💎*Premium: {link.premium}*
+
+🥏*Капча Flyer*: {flyer_count}
+🤖*Капча бота*: {link.count_captcha}
 
 🌍*GEO:*
 {geo_text}"""

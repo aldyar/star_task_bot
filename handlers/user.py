@@ -353,7 +353,7 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
         data = await state.get_data()
         referrer_id = data.get("referrer_id")
         
-        await LinkFunction.count_done_captcha(referrer_id,callback.from_user.id)
+        await LinkFunction.count_done_our_captcha(referrer_id,callback.from_user.id)
         
         await callback.answer("✅ Верно! Доступ разрешен.")
         await callback.message.delete()
@@ -580,7 +580,7 @@ async def check_admin_handler(message: Message, bot: Bot):
 
 @user.message(F.text == "test2")
 async def check_admin_handler(message: Message, bot: Bot):
-    await UserFunction.get_tgid_ref_user(5800173701)
+    await UserFunction.save_all()
     print('OK')
 
 @user.chat_join_request()

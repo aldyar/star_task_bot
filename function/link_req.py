@@ -88,3 +88,19 @@ class LinkFunction:
     async def get_links(session):
         result = await session.scalars(select(LinkStat))
         return result.all()
+    
+    @connection
+    async def count_done_our_captcha(session,link_name,user_id):
+        link = await session.scalar(select(LinkStat).where(LinkStat.link_name == link_name))
+        if link:
+            # --- Проверка user_id в поле users ---
+            existing_users = link.capthca_users.split(",") if link.capthca_users else []
+            if str(user_id) in existing_users:
+                return  # Уже есть — не продолжаем
+            link.done_captcha +=1
+            link.count_captcha +=1
+            # Добавление нового user_id в users
+            existing_users.append(str(user_id))
+            link.capthca_users = ",".join(existing_users)
+            await session.commit()
+

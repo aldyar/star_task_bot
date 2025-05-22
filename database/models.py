@@ -30,6 +30,8 @@ class User(Base):
     task_count: Mapped[int] = mapped_column(Integer,default=1)
     gender: Mapped[str] = mapped_column(String,nullable=True)
 
+
+
 class Config(Base):
     __tablename__ = 'config'
 
@@ -143,7 +145,7 @@ class LinkStat(Base):
     lang: Mapped[str] = mapped_column(String, nullable=True)
     users: Mapped[str] = mapped_column(String, nullable=True)
     capthca_users: Mapped[str] = mapped_column(String, nullable=True)
-
+    count_captcha: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
 
 async def async_main():
     async with engine.begin() as conn:
