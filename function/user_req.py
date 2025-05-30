@@ -148,3 +148,11 @@ class UserFunction:
                 f.write(f"@{row}\n")
 
         print("✅ Все ID сохранены в test_ids.txt")
+
+    
+    @connection
+    async def set_lang_user(session,tg_id,lang):
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        if user:
+            user.lang = lang
+            await session.commit()

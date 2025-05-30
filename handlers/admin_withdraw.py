@@ -104,6 +104,7 @@ async def withdraw_req_handler(callback: CallbackQuery):
             f"📌 *Заявка №{withdrawal.id}*\n"
             f"👤 *Пользователь:* {md.quote('@' + (withdrawal.username or 'Не указан'))}\n"
             f"🆔 *TG ID:* `{withdrawal.tg_id}`\n"
+            f"🌍 *GEO:* {withdrawal.user_lang}\n"
             f"💰 *Сумма:* `{withdrawal.amount} ⭐️`\n"
             f"⏳ *Статус:* _Ожидает выполнения_"
         )

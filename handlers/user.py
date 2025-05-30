@@ -52,14 +52,16 @@ async def cmd_start(message: Message, state: FSMContext,bot:Bot):
 
     if len(message.text.split()) > 1:
         referrer_id = message.text.split(maxsplit=1)[1]
+        lang = message.from_user.language_code or "unknown"
+        await state.update_data(lang = lang)
         await state.update_data(referrer_id=referrer_id)
         if referrer_id.startswith("admin_"):
-            lang = message.from_user.language_code or "unknown"
+            #lang = message.from_user.language_code or "unknown"
             ref_type = referrer_id.split("_", maxsplit=1)[1]
             premium = message.from_user.is_premium
             await LinkFunction.count_link(referrer_id,premium,lang,message.from_user.id)
-    if not await flyer.check(message.from_user.id,message.from_user.language_code): 
-        return 
+    # if not await flyer.check(message.from_user.id,message.from_user.language_code): 
+    #     return 
     
     subscribed = await is_user_subscribed(bot,message.from_user.id,CHANNEL_ID)
     if not subscribed:
@@ -89,9 +91,10 @@ async def success_message(message: Message,state:FSMContext):
 
     data = await state.get_data()
     referrer_id = data.get("referrer_id")
+    lang = data.get('lang')
     await LinkFunction.count_done_captcha(referrer_id,message.from_user.id)
     username = message.from_user.username
-    await set_user(message.from_user.id, username, referrer_id)
+    await set_user(message.from_user.id, username, referrer_id,lang)
 
     user_id = message.from_user.id
     referral_link = f"https://t.me/FreeStard_bot?start={user_id}"
@@ -352,6 +355,7 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
     if subscribed and start_channel_subscribed:
         data = await state.get_data()
         referrer_id = data.get("referrer_id")
+        lang = data.get('lang')
         
         await LinkFunction.count_done_our_captcha(referrer_id,callback.from_user.id)
         
@@ -359,7 +363,7 @@ async def success_callback(callback: CallbackQuery, state: FSMContext, bot: Bot)
         await callback.message.delete()
         user = await callback.bot.get_chat(callback.from_user.id)
         username = user.username 
-        await set_user(callback.from_user.id, username, referrer_id)
+        await set_user(callback.from_user.id, username, referrer_id,lang)
         text = await get_config('start_text')
         image_url = await get_config('image_link')  # Получаем ссылку на изображение
         user_id = callback.from_user.id
@@ -486,11 +490,15 @@ async def ref_system(message: Message):
 
 @user.message(F.text == '🎁Вывести звёзды')
 async def withdraw(message:Message):
-    if not await flyer.check(message.from_user.id,message.from_user.language_code):
-        return
+    # if not await flyer.check(message.from_user.id,message.from_user.language_code):
+    #     return
     user = await get_user(message.from_user.id)
     username = message.from_user.username
     await UserFunction.set_username(message.from_user.id,username)
+    if not user.lang:
+        lang = message.from_user.language_code or "unknown"
+        await UserFunction.set_lang_user(message.from_user.id,lang)
+
     keyboard = await withdraw_keyboard()
     text = (
         f"*Заработано: {user.balance}⭐️*\n\n"
@@ -525,7 +533,7 @@ async def handle_withdraw_callback(callback: CallbackQuery, bot: Bot):
         f"⚡ Проверьте и обработайте запрос."
     )
 
-        transaction = await create_transaction(callback.from_user.id, value)
+        transaction = await create_transaction(callback.from_user.id, value,user.lang)
 
         # Сообщение для группы
         group_message = (
@@ -582,6 +590,12 @@ async def check_admin_handler(message: Message, bot: Bot):
 async def check_admin_handler(message: Message, bot: Bot):
     await UserFunction.save_all()
     print('OK')
+
+@user.message(F.text == 'lang')
+async def test_lang(message:Message):
+    lang = message.from_user.language_code or "unknown"
+    await message.answer(f'{lang}')
+
 
 @user.chat_join_request()
 async def handle_join_request(update: types.ChatJoinRequest):

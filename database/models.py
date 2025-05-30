@@ -29,9 +29,9 @@ class User(Base):
     referral_count: Mapped[int] = mapped_column(Integer,default=0)
     task_count: Mapped[int] = mapped_column(Integer,default=1)
     gender: Mapped[str] = mapped_column(String,nullable=True)
+    lang: Mapped[str] = mapped_column(String,nullable=True)
 
-
-
+    
 class Config(Base):
     __tablename__ = 'config'
 
@@ -98,6 +98,7 @@ class Transaction(Base):
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     created: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
     message_id:Mapped[int] = mapped_column(Integer,nullable=True)
+    user_lang: Mapped[str] = mapped_column(String, nullable=True)
 
 class TaskState(Base):
     __tablename__ = 'task_states'

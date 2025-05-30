@@ -19,14 +19,19 @@ def connection(func):
 
 
 @connection
-async def set_user(session, tg_id, username, referrer_id):
+async def set_user(session, tg_id, username, referrer_id,lang):
     user = await session.scalar(select(User).where(User.tg_id == tg_id))
+    allowed_langs = ["ru", "en", "kk", "uk", "uz", "be"]
 
     if not user:
-        session.add(User(tg_id=tg_id, balance='1', username = username, referrer_id = referrer_id))
+        is_allowed_geo = lang.lower() in allowed_langs
+
+
+    if not user:
+        session.add(User(tg_id=tg_id, balance='1', username = username, referrer_id = referrer_id,lang=lang))
         referrer = await session.scalar(select(User).where(User.tg_id == referrer_id))
         ref_reward = await session.scalar(select(Config.ref_reward))
-        if referrer:
+        if is_allowed_geo and referrer:
             referrer.balance += ref_reward
             referrer.referral_count += 1
 
@@ -293,13 +298,14 @@ async def get_top_referrers_by_date(session, date_from, date_to):
     
 
 @connection
-async def create_transaction(session,tg_id, amount):
+async def create_transaction(session,tg_id, amount,lang):
     user = await session.scalar(select(User).where(User.tg_id == tg_id))
 
     new_transaction = Transaction(
         tg_id = tg_id,
         username=user.username if user.username else None,
-        amount = amount
+        amount = amount,
+        user_lang = lang
     )
     user.balance -= amount
 
