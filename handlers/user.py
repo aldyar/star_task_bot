@@ -28,7 +28,7 @@ from app.storage import BotEntry, s_reward
 from aiogram.types import ChatMember
 from function.user_req import UserFunction 
 from function.link_req import LinkFunction
-
+from function.mini_adds_req import MiniAdds as MiniAddsFunction
 
 image_start = 'images/image_start.jpg'
 image_ref = 'images/image_ref.jpg'
@@ -40,10 +40,13 @@ from flyerapi import Flyer
 flyer = Flyer(FLYER)
 
 
+# mini_add_start = await MiniAddsFunction.get_mini_add('start')
+# mini_add_base  = await MiniAddsFunction.get_mini_add('base')
 
 
 @user.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext,bot:Bot):
+    
     user = await get_user(message.from_user.id)
     if user:  # Если пользователь уже есть в базе данных
         await success_message(message,state)
@@ -60,8 +63,18 @@ async def cmd_start(message: Message, state: FSMContext,bot:Bot):
             ref_type = referrer_id.split("_", maxsplit=1)[1]
             premium = message.from_user.is_premium
             await LinkFunction.count_link(referrer_id,premium,lang,message.from_user.id)
-    # if not await flyer.check(message.from_user.id,message.from_user.language_code): 
-    #     return 
+
+    mini_add_start = await MiniAddsFunction.get_mini_add('start')
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_start:
+        keyboard = await kb.mini_add(mini_add_start.button_text,mini_add_start.url)
+        await message.answer(mini_add_start.text,parse_mode='HTML',reply_markup=keyboard)
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+
+    if not await flyer.check(message.from_user.id,message.from_user.language_code): 
+        return 
     
     subscribed = await is_user_subscribed(bot,message.from_user.id,CHANNEL_ID)
     if not subscribed:
@@ -89,6 +102,18 @@ async def success_message(message: Message,state:FSMContext):
     text = await get_config('start_text')
     #image_url = await get_config('image_link')  # Получаем ссылку на изображение
 
+    mini_add_start = await MiniAddsFunction.get_mini_add('start')
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_start:
+        keyboard = await kb.mini_add(mini_add_start.button_text,mini_add_start.url)
+        await message.answer(mini_add_start.text,parse_mode='HTML',reply_markup=keyboard)
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+
+    if not await flyer.check(message.from_user.id,message.from_user.language_code): 
+        return 
+    
     data = await state.get_data()
     referrer_id = data.get("referrer_id")
     lang = data.get('lang')
@@ -114,15 +139,25 @@ async def success_message(message: Message,state:FSMContext):
 
 #ЗАДАНИЯ
 @user.message(F.text == '🎯Задания')
-async def get_task_hander(message: Message,state: FSMContext):
+async def get_task_hander(message: Message | CallbackQuery,state: FSMContext):
     user_id = message.from_user.id
     premium = int(message.from_user.is_premium or 0)
     name = message.from_user.first_name 
     user = await get_user(user_id)
+    mark = 'task'
+    reply_target = message.message if isinstance(message, CallbackQuery) else message
+
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+
     if not user.gender:
-        await message.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
+        await reply_target.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
         return
     if not await flyer.check(message.from_user.id,message.from_user.language_code):
+        keyboard = await kb.check_flyer(mark)
+        await message.answer('⬇️*После выполнения условий нажмите на кнопку ниже*',parse_mode='Markdown', reply_markup=keyboard)
         return
     try:
         subgram = await asyncio.wait_for(Subgram.send_post(user_id,name,premium,user.gender), timeout=3)
@@ -155,10 +190,10 @@ async def get_task_hander(message: Message,state: FSMContext):
         await state.update_data(task = task)
         task_reward = await count_reward(message.from_user.id)
         reward = task_reward + subgram_reward
-        await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+        await reply_target.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.complete_task_inline(task.link)
-        await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        await reply_target.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
     elif task.type == 'entry':
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
 
@@ -171,10 +206,10 @@ async def get_task_hander(message: Message,state: FSMContext):
         await create_task_state(user_id,task.id)
         task_reward = await count_reward(user_id)
         reward = task_reward + subgram_reward
-        await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+        await reply_target.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.entry_type_inline(task.link)
-        await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        await reply_target.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
     elif task.type == 'BotEntry':
         text = f"🎯 <b>Доступно задание №{task.id}!</b>\n\n"
 
@@ -186,10 +221,10 @@ async def get_task_hander(message: Message,state: FSMContext):
         await state.update_data(task = task)
         task_reward = await count_reward(user_id)
         reward = task_reward + subgram_reward
-        await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
+        await reply_target.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{reward}⭐️!*\n\n'
                             '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
         keyboard = await kb.complete_task_inline(task.link)
-        await message.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
+        await reply_target.answer(text, parse_mode="HTML", disable_web_page_preview=True, reply_markup=keyboard)
         BotEntry[user_id] = False
         await asyncio.sleep(5)
         BotEntry[user_id] = True
@@ -326,6 +361,10 @@ async def complete_task_handler(callback: CallbackQuery, bot: Bot, state: FSMCon
 
 @user.message(F.text == '💎Бонус')
 async def bonus(message: Message):
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
     bonus = await get_config('bonus_amount')
     data = await get_bonus_update(message.from_user.id)
     now = datetime.now()  # Получаем текущее время в UTC
@@ -386,11 +425,20 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
     premium = int(callback.from_user.is_premium or 0)
     name = callback.from_user.first_name
     user = await get_user(user_id)
+    mark = 'TaskInline'
+
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await callback.message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+
     if not user.gender:
         await callback.answer()
         await callback.message.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
         return 
     if not await flyer.check(callback.from_user.id,callback.from_user.language_code):
+        keyboard = await kb.check_flyer(mark)
+        await callback.message.answer('⬇️*После выполнения условий нажмите на кнопку ниже*',parse_mode='Markdown', reply_markup=keyboard)
         return
     try:
         subgram = await asyncio.wait_for(Subgram.send_post(user_id, name, premium,user.gender), timeout=3)
@@ -464,10 +512,24 @@ async def task_handler(callback:CallbackQuery, state:FSMContext):
 
 
 @user.message(F.text == '⭐️Заработать звёзды')
-async def ref_system(message: Message):
+async def ref_system(message: Message | CallbackQuery):
+    mark = 'ref_system'
+    user_data = message.from_user if isinstance(message, Message) else message.from_user
+
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+
     if not await flyer.check(message.from_user.id,message.from_user.language_code):
+        keyboard = await kb.check_flyer(mark)
+        if isinstance(message, Message):
+            await message.answer('⬇️*После выполнения условий нажмите на кнопку ниже*',parse_mode='Markdown', reply_markup=keyboard)
+        else:
+            await message.message.answer('⬇️*После выполнения условий нажмите на кнопку ниже*',parse_mode='Markdown', reply_markup=keyboard)
         return
-    user_id = message.from_user.id
+    
+    user_id = user_data.id
     referral_link = f"https://t.me/FreeStard_bot?start={user_id}"
     change_text = await get_config('ref_text')
     user = await get_user(user_id)
@@ -485,19 +547,35 @@ async def ref_system(message: Message):
     formatted_text = change_text.format(referral_link=referral_link)
 
     photo = FSInputFile(image_ref)
-    await message.answer_photo(photo,caption=formatted_text, disable_web_page_preview=True, parse_mode='HTML')
+    reply_target = message.message if isinstance(message, CallbackQuery) else message
+    await reply_target.answer_photo(photo,caption=formatted_text, disable_web_page_preview=True, parse_mode='HTML')
 
 
 @user.message(F.text == '🎁Вывести звёзды')
-async def withdraw(message:Message):
-    # if not await flyer.check(message.from_user.id,message.from_user.language_code):
-    #     return
-    user = await get_user(message.from_user.id)
+async def withdraw(message: Message | CallbackQuery):
+    mark = 'withdraw'
+    user_data = message.from_user if isinstance(message, Message) else message.from_user
+    
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+
+    if not await flyer.check(user_data.id, user_data.language_code):
+        keyboard = await kb.check_flyer(mark)
+        if isinstance(message, Message):
+            await message.answer('⬇️*После выполнения условий нажмите на кнопку ниже*',parse_mode='Markdown', reply_markup=keyboard)
+        else:
+            await message.message.answer('⬇️*После выполнения условий нажмите на кнопку ниже*',parse_mode='Markdown', reply_markup=keyboard)
+        return
+
+    user = await get_user(user_data.id)
+    #user = await get_user(message.from_user.id)
     username = message.from_user.username
-    await UserFunction.set_username(message.from_user.id,username)
+    await UserFunction.set_username(user_data.id, user_data.username)
     if not user.lang:
-        lang = message.from_user.language_code or "unknown"
-        await UserFunction.set_lang_user(message.from_user.id,lang)
+        lang = user_data.language_code or "unknown"
+        await UserFunction.set_lang_user(user_data.id, lang)
 
     keyboard = await withdraw_keyboard()
     text = (
@@ -505,7 +583,8 @@ async def withdraw(message:Message):
         '*🔻 Выбери, подарок за сколько звёзд хочешь получить:*'
     )
     photo = FSInputFile(image_withdraw)
-    await message.answer_photo(photo,caption=text, parse_mode='Markdown', reply_markup=keyboard)
+    reply_target = message.message if isinstance(message, CallbackQuery) else message
+    await reply_target.answer_photo(photo,caption=text, parse_mode='Markdown', reply_markup=keyboard)
 
 
 
@@ -583,8 +662,10 @@ from aiogram.exceptions import TelegramBadRequest
 
 @user.message(F.text == "test")
 async def check_admin_handler(message: Message, bot: Bot):
-    result = await flyer.check(message.from_user.id,'ru')
-    await message.answer(str(result))
+    mark = 'Task'
+    keyboard = await kb.check_flyer(mark)
+    await message.answer('Проверь', reply_markup=keyboard)
+
 
 @user.message(F.text == "test2")
 async def check_admin_handler(message: Message, bot: Bot):

@@ -1,3 +1,3 @@
 SubgramList = {}
 BotEntry = {}
-s_reward = 0.25
+s_reward = 0.45

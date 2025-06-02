@@ -148,6 +148,17 @@ class LinkStat(Base):
     capthca_users: Mapped[str] = mapped_column(String, nullable=True)
     count_captcha: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
 
+
+class MiniAdd(Base):
+    __tablename__ = 'mini_adds'
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    type:Mapped[str] = mapped_column(String,nullable=True)  #first , always
+    text:Mapped[str] = mapped_column(String)
+    button_text:Mapped[str] = mapped_column(String)
+    url:Mapped[str] = mapped_column(String)
+
+
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

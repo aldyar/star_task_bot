@@ -51,3 +51,10 @@ class StartChannel(StatesGroup):
 
 class LinkStat(StatesGroup):
     wait_name = State()
+
+class MiniAdds(StatesGroup):
+    wait_text = State()
+    wait_button_text = State()
+    wait_url = State()
+
+    

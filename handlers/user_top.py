@@ -6,6 +6,7 @@ import app.keyboards as kb
 from function.user_req import UserFunction
 user = Router()
 from aiogram.types import FSInputFile
+from function.mini_adds_req import MiniAdds as MiniAddsFunction
 
 image_url = 'images/image_top.jpg'
 photo = FSInputFile(image_url)
@@ -14,6 +15,11 @@ photo = FSInputFile(image_url)
 @user.message(F.text == '🏆Топ')
 async def top_handler(message: Message):
 
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+        
     top_users = await UserFunction.get_user_top_5_referrers(1)
 
     medals = ["🥇", "🥈", "🥉", "✨", "✨"]

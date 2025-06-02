@@ -13,6 +13,7 @@ import random
 from function.user_req import UserFunction as User
 from handlers.user import success_message,ref_system
 from aiogram.types import FSInputFile
+from function.mini_adds_req import MiniAdds as MiniAddsFunction
 
 image_stat = 'images/image_stat.jpg'
 
@@ -21,6 +22,12 @@ user = Router()
 
 @user.message(F.text == '👤Профиль')
 async def user_profile_handler(message:Message):
+
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+
     user = await get_user(message.from_user.id)
     ref_week = await User.get_referral_count_by_days(message.from_user.id,7)
     referrals = await User.get_referral(message.from_user.id)

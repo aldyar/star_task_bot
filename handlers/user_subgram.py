@@ -33,8 +33,9 @@ image_task = 'images/image_task.jpg'
 
 
 @user.message(F.text == 'subgram')
-async def test_subgram(message:Message,state:FSMContext,id):
+async def test_subgram(message:Message|CallbackQuery,state:FSMContext,id):
     await state.clear()
+    reply_target = message.message if isinstance(message, CallbackQuery) else message
     print(f"[TEST_HANDLER ]USERID   :_____ {message.from_user.id}")
     all_links = SubgramList.get(id, [])
     print(f"[DEBUG] SubgramList полностью: {SubgramList}")
@@ -63,10 +64,10 @@ async def test_subgram(message:Message,state:FSMContext,id):
     text += f"• <b>Награда:</b> {reward}⭐"
     #await state.update_data(task = task)
     #reward = await count_reward(message.from_user.id)
-    await message.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{subgram_reward}⭐️!*\n\n'
+    await reply_target.answer_photo(photo,caption=f'*👑 Выполни все задания и получи* *{subgram_reward}⭐️!*\n\n'
                              '*🔻 Выполни текущее задание, чтобы открыть новое:*', parse_mode='Markdown')
     #keyboard = await kb.complete_task_inline(task.link)
-    await message.answer(text, parse_mode="HTML", disable_web_page_preview=True,reply_markup= keyboard)
+    await reply_target.answer(text, parse_mode="HTML", disable_web_page_preview=True,reply_markup= keyboard)
 
 
 @user.message(F.text == 'subgram')

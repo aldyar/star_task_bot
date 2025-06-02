@@ -26,12 +26,19 @@ admin = Router()
 class Admin(Filter):
     async def __call__(self, message: Message):
         return message.from_user.id in ADMIN
-    
+
 
 @admin.message(Admin(), F.text == 'Напоминание')
 async def reminder_handler(message:Message,state:FSMContext):
     await state.clear()
-    await message.answer('*Выберите что хотите поменять:*',parse_mode='Markdown',reply_markup=kb.inline_admin_reminder)
+    await message.answer('*Выберите тип пожйлуйста*',parse_mode='Markdown',reply_markup=kb.remider_choose)
+
+
+@admin.callback_query(F.data == 'Reminder')
+async def callback_reminder(callback:CallbackQuery,state:FSMContext):
+        await state.clear()
+        await callback.message.delete()
+        await callback.message.answer('*Выберите что хотите поменять:*',parse_mode='Markdown',reply_markup=kb.inline_admin_reminder)
 
 
 @admin.callback_query(F.data == 'ResetTextReminder')

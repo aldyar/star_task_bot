@@ -173,3 +173,26 @@ inline_reminder_edit_button = InlineKeyboardMarkup(inline_keyboard=[[InlineKeybo
 async def inline_remider_button(text,url):
     inline_remider_button = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = text,url = url)]])
     return inline_remider_button
+
+async def check_flyer(mark):
+    check_flyer = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✅Проверить', callback_data=f'CheckFlyer_{mark}')]])
+    return check_flyer
+
+remider_choose = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Напоминание',callback_data='Reminder')],
+                                                       [InlineKeyboardButton(text = 'Мини рекламы',callback_data='MiniAdds')]])
+
+mini_adds_choose = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Старт',callback_data='Mini_start')],
+                                                         [InlineKeyboardButton(text = 'Базовая',callback_data='Mini_base')]])
+
+async def mini_adds_set(type):
+    mini_adds_set = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить',callback_data=f'CreateMiniAdds_{type}')],
+                                                          [InlineKeyboardButton(text = 'Удалить',callback_data=f'DeleteMini_{type}')]])
+    return mini_adds_set
+
+async def add_mini_adds(type):
+    add_mini_adds = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Создать рекламу',callback_data=f'CreateMiniAdds_{type}')],])
+    return add_mini_adds
+
+async def mini_add(text,url):
+    mini_add = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = f'{text}',url=f'{url}')]])
+    return mini_add
