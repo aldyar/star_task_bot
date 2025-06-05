@@ -14,6 +14,7 @@ from function.user_req import UserFunction as User
 from handlers.user import success_message,ref_system
 from aiogram.types import FSInputFile
 from function.mini_adds_req import MiniAdds as MiniAddsFunction
+from handlers.user_check import subgram_captcha
 
 image_stat = 'images/image_stat.jpg'
 
@@ -21,14 +22,26 @@ user = Router()
 
 
 @user.message(F.text == '👤Профиль')
-async def user_profile_handler(message:Message):
+async def user_profile_handler(message:Message|CallbackQuery):
+    type = 'profile'
+    user = await get_user(message.from_user.id)
+    reply_target = message.message if isinstance(message, CallbackQuery) else message
 
+    if not user.gender:
+        await reply_target.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
+        return
+    
+    if not await subgram_captcha(message,type):
+        return
+    
     mini_add_base  = await MiniAddsFunction.get_mini_add('base')
     if mini_add_base:
         keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
-        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+        await reply_target.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
 
-    user = await get_user(message.from_user.id)
+    
+    
+    
     ref_week = await User.get_referral_count_by_days(message.from_user.id,7)
     referrals = await User.get_referral(message.from_user.id)
     text = f"""
@@ -49,7 +62,7 @@ async def user_profile_handler(message:Message):
     #     text += referral_list
     # else:
     #     text += "Нет приглашённых пользователей."
-    await message.answer_photo(photo,caption=text,reply_markup=kb.inline_user_profile)
+    await reply_target.answer_photo(photo,caption=text,reply_markup=kb.inline_user_profile)
 
 
 @user.callback_query(F.data =='BackMenu')

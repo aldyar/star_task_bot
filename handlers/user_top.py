@@ -7,19 +7,30 @@ from function.user_req import UserFunction
 user = Router()
 from aiogram.types import FSInputFile
 from function.mini_adds_req import MiniAdds as MiniAddsFunction
+from handlers.user_check import subgram_captcha
+from database.requests import get_user
 
 image_url = 'images/image_top.jpg'
 photo = FSInputFile(image_url)
 
 
 @user.message(F.text == '🏆Топ')
-async def top_handler(message: Message):
-
+async def top_handler(message: Message|CallbackQuery):
+    reply_target = message.message if isinstance(message, CallbackQuery) else message
+    type = 'top'
+    user = await get_user(message.from_user.id)
+    if not user.gender:
+        await reply_target.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
+        return
+    
+    if not await subgram_captcha(message,type):
+        return
     mini_add_base  = await MiniAddsFunction.get_mini_add('base')
     if mini_add_base:
         keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
         await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
-        
+    
+    
     top_users = await UserFunction.get_user_top_5_referrers(1)
 
     medals = ["🥇", "🥈", "🥉", "✨", "✨"]
@@ -39,12 +50,12 @@ async def top_handler(message: Message):
         my_count = await UserFunction.get_user_refferal_count(message.from_user.id,1)
 
         text += f"\n❌ Ты не в Топ-5 за 24 часа! | <b>{my_count}</b> рефералов."
-    await message.answer_photo(photo, caption=text, parse_mode="HTML", reply_markup=kb.inline_user_top)
+    await reply_target.answer_photo(photo, caption=text, parse_mode="HTML", reply_markup=kb.inline_user_top)
 
 
 
 @user.callback_query(F.data == 'TopWeek')
-async def top_handler(callback: CallbackQuery):
+async def top_handle7(callback: CallbackQuery):
 
     top_users = await UserFunction.get_user_top_5_referrers(7)
 
@@ -71,7 +82,7 @@ async def top_handler(callback: CallbackQuery):
 
 
 @user.callback_query(F.data == 'TopMonth')
-async def top_handler(callback: CallbackQuery):
+async def top_handler_30(callback: CallbackQuery):
 
     top_users = await UserFunction.get_user_top_5_referrers(30)
 

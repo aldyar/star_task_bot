@@ -13,7 +13,7 @@ import aiohttp
 from pprint import pprint 
 from config import SUBGRAM_TOKEN
 import asyncio
-
+import json
 
 def connection(func):
     async def inner(*args, **kwargs):
@@ -110,3 +110,29 @@ class SubGramFunction:
         if user:
             user.balance += reward
             await session.commit()
+
+    
+    async def check_captcha(user_id: int, links: list[str]) -> bool:
+        url = "https://api.subgram.ru/get-user-subscriptions"  # или другой нужный endpoint
+        headers = {
+            "Auth": SUBGRAM_TOKEN
+        }
+        data = {
+            "user_id": user_id,
+            "links": links
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=data, headers=headers) as resp:
+                response_data = await resp.json()
+        
+        print(f"[DEBUG] Response from Subgram:\n{json.dumps(response_data, indent=2, ensure_ascii=False)}")
+
+        sponsors = response_data.get("additional", {}).get("sponsors", [])
+
+        for sponsor in sponsors:
+            status = sponsor.get("status")
+            if status != "subscribed" and status != "notgetted":
+                return False
+
+        return True

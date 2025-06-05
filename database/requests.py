@@ -24,8 +24,8 @@ async def set_user(session, tg_id, username, referrer_id,lang):
     allowed_langs = ["ru", "en", "kk", "uk", "uz", "be"]
 
     if not user:
-        is_allowed_geo = lang.lower() in allowed_langs
-
+        #is_allowed_geo = lang.lower() in allowed_langs
+        is_allowed_geo = lang is not None and lang.lower() in allowed_langs
 
     if not user:
         session.add(User(tg_id=tg_id, balance='1', username = username, referrer_id = referrer_id,lang=lang))

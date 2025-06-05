@@ -29,6 +29,7 @@ from aiogram.types import ChatMember
 from function.user_req import UserFunction 
 from function.link_req import LinkFunction
 from function.mini_adds_req import MiniAdds as MiniAddsFunction
+from handlers.user_check import subgram_captcha
 
 image_start = 'images/image_start.jpg'
 image_ref = 'images/image_ref.jpg'
@@ -40,13 +41,19 @@ from flyerapi import Flyer
 flyer = Flyer(FLYER)
 
 
-# mini_add_start = await MiniAddsFunction.get_mini_add('start')
-# mini_add_base  = await MiniAddsFunction.get_mini_add('base')
-
 
 @user.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext,bot:Bot):
-    
+
+    mini_add_start = await MiniAddsFunction.get_mini_add('start')
+    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_start:
+        keyboard = await kb.mini_add(mini_add_start.button_text,mini_add_start.url)
+        await message.answer(mini_add_start.text,parse_mode='HTML',reply_markup=keyboard)
+    if mini_add_base:
+        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard) 
+
     user = await get_user(message.from_user.id)
     if user:  # Если пользователь уже есть в базе данных
         await success_message(message,state)
@@ -64,14 +71,7 @@ async def cmd_start(message: Message, state: FSMContext,bot:Bot):
             premium = message.from_user.is_premium
             await LinkFunction.count_link(referrer_id,premium,lang,message.from_user.id)
 
-    mini_add_start = await MiniAddsFunction.get_mini_add('start')
-    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
-    if mini_add_start:
-        keyboard = await kb.mini_add(mini_add_start.button_text,mini_add_start.url)
-        await message.answer(mini_add_start.text,parse_mode='HTML',reply_markup=keyboard)
-    if mini_add_base:
-        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
-        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+
 
     if not await flyer.check(message.from_user.id,message.from_user.language_code): 
         return 
@@ -102,14 +102,14 @@ async def success_message(message: Message,state:FSMContext):
     text = await get_config('start_text')
     #image_url = await get_config('image_link')  # Получаем ссылку на изображение
 
-    mini_add_start = await MiniAddsFunction.get_mini_add('start')
-    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
-    if mini_add_start:
-        keyboard = await kb.mini_add(mini_add_start.button_text,mini_add_start.url)
-        await message.answer(mini_add_start.text,parse_mode='HTML',reply_markup=keyboard)
-    if mini_add_base:
-        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
-        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+    # mini_add_start = await MiniAddsFunction.get_mini_add('start')
+    # mini_add_base  = await MiniAddsFunction.get_mini_add('base')
+    # if mini_add_start:
+    #     keyboard = await kb.mini_add(mini_add_start.button_text,mini_add_start.url)
+    #     await message.answer(mini_add_start.text,parse_mode='HTML',reply_markup=keyboard)
+    # if mini_add_base:
+    #     keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+    #     await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
 
     if not await flyer.check(message.from_user.id,message.from_user.language_code): 
         return 
@@ -155,6 +155,7 @@ async def get_task_hander(message: Message | CallbackQuery,state: FSMContext):
     if not user.gender:
         await reply_target.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
         return
+    
     if not await flyer.check(message.from_user.id,message.from_user.language_code):
         keyboard = await kb.check_flyer(mark)
         await message.answer('⬇️*После выполнения условий нажмите на кнопку ниже*',parse_mode='Markdown', reply_markup=keyboard)
@@ -360,11 +361,24 @@ async def complete_task_handler(callback: CallbackQuery, bot: Bot, state: FSMCon
 
 
 @user.message(F.text == '💎Бонус')
-async def bonus(message: Message):
+async def bonus(message: Message|CallbackQuery):
+    type = 'bonus'
+    reply_target = message.message if isinstance(message, CallbackQuery) else message
+    user = await get_user(message.from_user.id)
+
+    if not user.gender:
+        await reply_target.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
+        return
+    
+    if not await subgram_captcha(message,type):
+        return
     mini_add_base  = await MiniAddsFunction.get_mini_add('base')
     if mini_add_base:
         keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
         await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+    
+    
+
     bonus = await get_config('bonus_amount')
     data = await get_bonus_update(message.from_user.id)
     now = datetime.now()  # Получаем текущее время в UTC
@@ -384,7 +398,7 @@ async def bonus(message: Message):
             '❌ *Вы уже получали бонус недавно!*\n'
             f'💡 *Следующий бонус будет доступен через {int(hours)}ч {int(minutes)}м.*'
         )
-    await message.answer(text,parse_mode='Markdown')
+    await reply_target.answer(text,parse_mode='Markdown')
 
 
 @user.callback_query(F.data == 'accsess')
