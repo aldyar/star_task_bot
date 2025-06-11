@@ -106,7 +106,8 @@ edit_bonus = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 
 
 stat_edit = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '✏️Сортировать по дате(Регистрация)',callback_data='NumDate_reg')],
                                                   [InlineKeyboardButton(text = '✏️Сортировать по дате(Количество привлеченных)',callback_data='NumDate_ref')],
-                                                  [InlineKeyboardButton(text = '🔗 Ссылки',callback_data='LinkStat')]])
+                                                  [InlineKeyboardButton(text = '🔗 Ссылки',callback_data='LinkStat')],
+                                                  [InlineKeyboardButton(text = '🧾 Промокод',callback_data='Promocode')]])
 
 inline_task_type = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Подписка',callback_data= 'subscribe')],
                                                          [InlineKeyboardButton(text = 'Заявка', callback_data = 'entry')],
@@ -130,7 +131,8 @@ inline_admin_reminder = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardBut
 
 inline_user_profile = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '⭐️ Заработать звезды',callback_data='EarnStars'),
                                                              InlineKeyboardButton(text = '🎯 Задания',callback_data='task')],
-                                                             [InlineKeyboardButton(text = '⬅️В главное меню',callback_data='BackMenu')]])
+                                                             [InlineKeyboardButton(text = '⬅️В главное меню',callback_data='BackMenu'),
+                                                              InlineKeyboardButton(text = '🧾 Промокод', callback_data='UsePromocode')]])
 
 inline_user_top = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '📅 Топ за неделю',callback_data='TopWeek')],
                                                         [InlineKeyboardButton(text = '📅 Топ за месяц',callback_data='TopMonth')]])
@@ -196,3 +198,7 @@ async def add_mini_adds(type):
 async def mini_add(text,url):
     mini_add = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = f'{text}',url=f'{url}')]])
     return mini_add
+
+promocode_menu_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text ='Список промокодов',callback_data='PromoList')],
+                                                              [InlineKeyboardButton(text = 'Создать промокод',callback_data='CreatePromocode')],
+                                                              [InlineKeyboardButton(text = 'Удалить промокод', callback_data='DeletePromocode')]])

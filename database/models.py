@@ -158,6 +158,17 @@ class MiniAdd(Base):
     button_text:Mapped[str] = mapped_column(String)
     url:Mapped[str] = mapped_column(String)
 
+class Promocode(Base):
+    __tablename__ = 'promocodes'
+
+    id:Mapped[int] = mapped_column(Integer,primary_key=True)
+    name: Mapped[str] = mapped_column(String,nullable=True)
+    code: Mapped[str] = mapped_column(String,nullable=True)
+    total_count: Mapped[int] = mapped_column(Integer,nullable=True)
+    use_count: Mapped[int] = mapped_column(Integer,nullable=True)
+    users: Mapped[str] = mapped_column(String,nullable=True)
+    reward: Mapped[int] = mapped_column(Integer,nullable=True)
+
 
 async def async_main():
     async with engine.begin() as conn:

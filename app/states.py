@@ -57,4 +57,7 @@ class MiniAdds(StatesGroup):
     wait_button_text = State()
     wait_url = State()
 
-    
+class Promocode(StatesGroup):
+    create_promo = State()
+    delete_promo = State()
+    use_promo = State()

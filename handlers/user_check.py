@@ -18,14 +18,19 @@ flyer = Flyer(FLYER)
 
 @user.callback_query(F.data.startswith('CheckFlyer_'))
 async def check_flyer(callback: CallbackQuery,state:FSMContext):
-    from handlers.user import withdraw,task_handler,get_task_hander
-    await callback.answer()
+    from handlers.user import withdraw,task_handler,get_task_hander,success_message
+    await callback.message.delete()
     mark = callback.data.split("CheckFlyer_")[1]
     print(f"Получен mark: {mark}")
     if not await flyer.check(callback.from_user.id,callback.from_user.language_code):
+        keyboard = await kb.check_flyer(mark)
+        await callback.message.answer('⬇️*После выполнения условий нажмите на кнопку ниже*',parse_mode='Markdown', reply_markup=keyboard)
         return
+    print(f"YAA TUTAAA")
     if mark == 'withdraw':
         await withdraw(callback)
+    elif mark == 'start':
+        await success_message(callback,state)
     elif mark == 'TaskInline':
         await task_handler(callback,state)
     elif mark == 'Task':
@@ -75,7 +80,8 @@ async def check_flyer(callback: CallbackQuery,state:FSMContext):
 
 
 @user.message(F.text == 'subtest')
-async def subgram_captcha(message: Message,type):
+async def subgram_captcha(message: Message|CallbackQuery,type):
+    reply_target = message.message if isinstance(message, CallbackQuery) else message
     user = message.from_user
     print(f'USER___________{user.id}')
     gender = await get_user(user.id)
@@ -115,7 +121,7 @@ async def subgram_captcha(message: Message,type):
         )
     )
 
-    await message.answer(
+    await reply_target.answer(
         "<b>Чтобы получить доступ к функциям бота, необходимо подписаться на ресурсы.</b> 🌟\n\n" \
         "<span class=\"tg-spoiler\">не отписывайтесь от каналов в течении как минимум 24 часов. Иначе нам придется наложить санкции</span> ",
         parse_mode='HTML',
@@ -127,7 +133,7 @@ async def subgram_captcha(message: Message,type):
 async def check_subgram_capthca(callback: CallbackQuery):
     from handlers.user_profile import user_profile_handler
     from handlers.user_top import top_handler
-    from handlers.user import bonus
+    from handlers.user import bonus, withdraw
     type = callback.data.removeprefix('SubgramCaptcha_')
     user_id = callback.from_user.id
 
@@ -148,9 +154,13 @@ async def check_subgram_capthca(callback: CallbackQuery):
             await top_handler(callback)
         elif type == 'bonus':
             await bonus(callback)
+        elif type == 'withdraw':
+            await withdraw(callback)
         await callback.message.delete()
     else:
         await callback.answer("❌ Ты ещё не подписан на все ресурсы.")
+        await callback.message.delete()
+        await subgram_captcha(callback,type)
 
 
 

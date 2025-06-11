@@ -11,6 +11,7 @@ from handlers.admin_reminder import admin as admin_reminder
 from handlers.admin_event import admin as admin_event
 from handlers.admin_link_stat import admin as admin_link_stat
 from handlers.admin_mini_adds import admin as admin_mini_adds
+from handlers.admin_promocode import admin as admin_promocode
 from handlers.user import user
 from handlers.user_profile import user as user_profile
 from handlers.user_top import user as user_top
@@ -42,7 +43,7 @@ async def main():
 
     # Регистрация роутеров
     dp.include_routers(admin_router, admin_ref_router, admin_withdraw, admin_bonus, admin_stat,admin_start,
-                       admin_reminder,admin_event,admin_link_stat,admin_mini_adds, 
+                       admin_reminder,admin_event,admin_link_stat,admin_mini_adds,admin_promocode,
                        user, user_profile, user_top,user_subgram,user_check)
     dp.startup.register(on_startup)
 

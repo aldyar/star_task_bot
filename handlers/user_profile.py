@@ -15,6 +15,9 @@ from handlers.user import success_message,ref_system
 from aiogram.types import FSInputFile
 from function.mini_adds_req import MiniAdds as MiniAddsFunction
 from handlers.user_check import subgram_captcha
+import asyncio
+from app.states import Promocode
+from function.promocode_req import PromocodeFunction
 
 image_stat = 'images/image_stat.jpg'
 
@@ -22,7 +25,8 @@ user = Router()
 
 
 @user.message(F.text == '👤Профиль')
-async def user_profile_handler(message:Message|CallbackQuery):
+async def user_profile_handler(message:Message|CallbackQuery,state:FSMContext):
+    await state.clear()
     type = 'profile'
     user = await get_user(message.from_user.id)
     reply_target = message.message if isinstance(message, CallbackQuery) else message
@@ -31,15 +35,15 @@ async def user_profile_handler(message:Message|CallbackQuery):
         await reply_target.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
         return
     
-    if not await subgram_captcha(message,type):
-        return
+    # if not await subgram_captcha(message,type):
+    #     return
     
     mini_add_base  = await MiniAddsFunction.get_mini_add('base')
     if mini_add_base:
         keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
         await reply_target.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+        await asyncio.sleep(2)
 
-    
     
     
     ref_week = await User.get_referral_count_by_days(message.from_user.id,7)
@@ -50,7 +54,7 @@ async def user_profile_handler(message:Message|CallbackQuery):
 👤 Имя: {user.username}
 🆔 ID: {message.from_user.id}
 ──────────────
-💰 Баланс: {user.balance}⭐️
+💰 Баланс: {user.balance:.2f}⭐️
 👥 Всего рефералов: {user.referral_count}
 📆 За неделю: {ref_week}
 """
@@ -94,3 +98,28 @@ async def earn_stars_handler(callback:CallbackQuery):
     await callback.message.answer(formatted_text, disable_web_page_preview=True, parse_mode='HTML')
     await callback.answer()
 
+@user.callback_query(F.data == 'UsePromocode')
+async def use_promocode_handler(callback:CallbackQuery,state:FSMContext):
+    await callback.answer()
+    await callback.message.answer('🧾*Введите промокод*',parse_mode='Markdown')
+    await state.set_state(Promocode.use_promo)
+
+
+@user.message(Promocode.use_promo)
+async def use_promocode_process(message:Message,state:FSMContext):
+    code = message.text
+    promo = await PromocodeFunction.get_promo(code)
+    promocode = await PromocodeFunction.use_promocode(code, message.from_user.id)
+
+    if promocode == 1:
+        text = f'*Промокод не найден* `{code}`'
+    if promocode == 2:
+        text = f'*Промокод* `{code}` *не действителен*'
+    if promocode == 3:
+        text = f'*Вы уже использовали промокод* `{code}`'
+    if promocode == 5:
+        text = f'*✅Промокод успешно активирован, вам начислено ⭐️{promo.reward} *'
+        
+
+    await message.answer(text,parse_mode='Markdown')
+    await state.clear()
