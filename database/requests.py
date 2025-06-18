@@ -298,14 +298,15 @@ async def get_top_referrers_by_date(session, date_from, date_to):
     
 
 @connection
-async def create_transaction(session,tg_id, amount,lang):
+async def create_transaction(session,tg_id, amount,lang,emoji):
     user = await session.scalar(select(User).where(User.tg_id == tg_id))
 
     new_transaction = Transaction(
         tg_id = tg_id,
         username=user.username if user.username else None,
         amount = amount,
-        user_lang = lang
+        user_lang = lang,
+        emoji = emoji
     )
     user.balance -= amount
 

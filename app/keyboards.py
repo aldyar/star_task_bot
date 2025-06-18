@@ -129,10 +129,9 @@ inline_admin_reminder = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardBut
                                                               [InlineKeyboardButton(text = 'Опубликовать',callback_data='SendReminder')]])
 
 
-inline_user_profile = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '⭐️ Заработать звезды',callback_data='EarnStars'),
-                                                             InlineKeyboardButton(text = '🎯 Задания',callback_data='task')],
-                                                             [InlineKeyboardButton(text = '⬅️В главное меню',callback_data='BackMenu'),
-                                                              InlineKeyboardButton(text = '🧾 Промокод', callback_data='UsePromocode')]])
+inline_user_profile = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '🧾 Промокод', callback_data='UsePromocode')],
+                                                             [InlineKeyboardButton(text = '⬅️В главное меню',callback_data='BackMenu')]])
+                                                              
 
 inline_user_top = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '📅 Топ за неделю',callback_data='TopWeek')],
                                                         [InlineKeyboardButton(text = '📅 Топ за месяц',callback_data='TopMonth')]])
@@ -183,12 +182,18 @@ async def check_flyer(mark):
 remider_choose = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Напоминание',callback_data='Reminder')],
                                                        [InlineKeyboardButton(text = 'Мини рекламы',callback_data='MiniAdds')]])
 
-mini_adds_choose = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Старт',callback_data='Mini_start')],
-                                                         [InlineKeyboardButton(text = 'Базовая',callback_data='Mini_base')]])
+mini_adds_choose = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Старт',callback_data='choose_start')],
+                                                         [InlineKeyboardButton(text = 'Базовая',callback_data='choose_base')]])
+
+
+async def mini_adds_menu(type):
+    mini_adds_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Список реклам',callback_data=f'Mini_{type}')],
+                                                       [InlineKeyboardButton(text = 'Создать новую рекламу',callback_data=f'CreateMiniAdds_{type}')]])
+    return mini_adds_menu
+
 
 async def mini_adds_set(type):
-    mini_adds_set = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Изменить',callback_data=f'CreateMiniAdds_{type}')],
-                                                          [InlineKeyboardButton(text = 'Удалить',callback_data=f'DeleteMini_{type}')]])
+    mini_adds_set = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = 'Удалить',callback_data=f'DeleteMini_{type}')]])
     return mini_adds_set
 
 async def add_mini_adds(type):
@@ -202,3 +207,25 @@ async def mini_add(text,url):
 promocode_menu_inline = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text ='Список промокодов',callback_data='PromoList')],
                                                               [InlineKeyboardButton(text = 'Создать промокод',callback_data='CreatePromocode')],
                                                               [InlineKeyboardButton(text = 'Удалить промокод', callback_data='DeletePromocode')]])
+
+new_withdraw_menu = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='15 ⭐️ (🧸)', callback_data='gift_15_🧸'),
+                                                           InlineKeyboardButton(text='15 ⭐️ (💖)', callback_data='gift_15_💖')],
+                                                          [InlineKeyboardButton(text='25 ⭐️ (🌹)', callback_data='gift_25_🌹'),
+                                                           InlineKeyboardButton(text='25 ⭐️ (🎁)', callback_data='gift_25_🎁')],
+                                                          [InlineKeyboardButton(text='50 ⭐️ (🍾)', callback_data='gift_50_🍾'),
+                                                           InlineKeyboardButton(text='50 ⭐️ (🚀)', callback_data='gift_50_🚀')],
+                                                          [InlineKeyboardButton(text='50 ⭐️ (💐)', callback_data='gift_50_💐'),
+                                                           InlineKeyboardButton(text='50 ⭐️ (🎂)', callback_data='gift_50_🎂')],
+                                                          [InlineKeyboardButton(text='100 ⭐️ (🏆)', callback_data='gift_100_🏆'),
+                                                          InlineKeyboardButton(text='100 ⭐️ (💍)', callback_data='gift_100_💍')],
+                                                          [InlineKeyboardButton(text='100 ⭐️ (💎)', callback_data='gift_100_💎')]])
+                                                          #[InlineKeyboardButton(text='Telegram Premium 6мес. (1700 ⭐️)', callback_data='gift_1700_💎')]])
+
+
+add_keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text = '🧸',url = 'https://t.me/freestarsss_tgrobot?start=Stars'),
+                                                      InlineKeyboardButton(text = '🚀',url = 'https://t.me/freestarsss_tgrobot?start=Stars'),
+                                                      InlineKeyboardButton(text = '💍',url = 'https://t.me/freestarsss_tgrobot?start=Stars')],
+                                                     [InlineKeyboardButton(text = '🌹',url = 'https://t.me/freestarsss_tgrobot?start=Stars'),
+                                                      InlineKeyboardButton(text = '🍭',url = 'https://t.me/freestarsss_tgrobot?start=Stars'),
+                                                      InlineKeyboardButton(text = '🏆',url = 'https://t.me/freestarsss_tgrobot?start=Stars')],
+                                                      [InlineKeyboardButton(text = '--Другой подарок', url = 'https://t.me/freestarsss_tgrobot?start=Stars')]])                                                        

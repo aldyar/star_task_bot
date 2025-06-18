@@ -27,6 +27,7 @@ user = Router()
 @user.message(F.text == '👤Профиль')
 async def user_profile_handler(message:Message|CallbackQuery,state:FSMContext):
     await state.clear()
+    from handlers.user import add_keyboard_handler
     type = 'profile'
     user = await get_user(message.from_user.id)
     reply_target = message.message if isinstance(message, CallbackQuery) else message
@@ -35,14 +36,29 @@ async def user_profile_handler(message:Message|CallbackQuery,state:FSMContext):
         await reply_target.answer('*Пожалуйста, укажите ваш пол 👇*',parse_mode='Markdown',reply_markup=kb.inline_choose_gender)
         return
     
-    # if not await subgram_captcha(message,type):
-    #     return
+    if not await subgram_captcha(message,type):
+        return
     
-    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
-    if mini_add_base:
-        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
-        await reply_target.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
-        await asyncio.sleep(2)
+
+    # mini_add_base_list  = await MiniAddsFunction.get_mini_add('base')
+    # if mini_add_base_list:
+    #     mini_add_base = random.choice(mini_add_base_list)
+    #     keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+    #     await reply_target.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+    #     await asyncio.sleep(1)
+
+
+    # 🔀 Случайный выбор: 50% базовая реклама, 50% кнопка "подарок"
+    mini_add_base_list = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_base_list and random.choice([True, False]):
+        # Показываем базовую рекламу
+        mini_add_base = random.choice(mini_add_base_list)
+        keyboard = await kb.mini_add(mini_add_base.button_text, mini_add_base.url)
+        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard)
+        await asyncio.sleep(1)
+    else:
+        # Показываем клавиатуру "Выберите подарок"
+        await add_keyboard_handler(message)
 
     
     

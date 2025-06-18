@@ -156,3 +156,40 @@ class UserFunction:
         if user:
             user.lang = lang
             await session.commit()
+
+
+    
+
+    @connection
+    async def export_referrals(session):
+                # Твой список юзернеймов
+        usernames = [
+            "@fa_Nil_iy", "@NATI_MAN369", "@Jfrii_lil", "@Blackblade6",
+            "@sayednaim", "@K_E_P_E", "@IrhamXD", "@BJK_TOPUP1"
+        ]
+
+        # Удаляем @ перед поиском
+        cleaned_usernames = [u.lstrip('@') for u in usernames]
+        for username in cleaned_usernames:
+            # Ищем пользователя по username
+            result = await session.execute(select(User).where(User.username == username))
+            user = result.scalar()
+
+            if not user:
+                print(f"[!] Не найден: {username}")
+                continue
+
+            # Ищем всех рефералов, у которых referrer_id == user.tg_id
+            result = await session.execute(select(User).where(User.referrer_id == user.tg_id))
+            referrals = result.scalars().all()
+
+            # Создаём файл с именем username.txt
+            filename = f"{username}.txt"
+            with open(filename, "w", encoding="utf-8") as f:
+                if not referrals:
+                    f.write("Нет рефералов.\n")
+                for r in referrals:
+                    line = f"{r.username or 'Без username'} — {r.lang or 'Не указан'}\n"
+                    f.write(line)
+
+            print(f"[+] Записано: {filename}")

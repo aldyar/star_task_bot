@@ -35,9 +35,11 @@ class LinkFunction:
 
         link = await session.scalar(select(LinkStat).where(LinkStat.link_name == link_name))
         if link:
+            link.all_clicks +=1
             # --- Проверка user_id в поле users ---
             existing_users = link.users.split(",") if link.users else []
             if str(user_id) in existing_users:
+                await session.commit()
                 return  # Уже есть — не продолжаем
             
             link.clicks +=1
@@ -62,7 +64,8 @@ class LinkFunction:
             # Добавление нового user_id в users
             existing_users.append(str(user_id))
             link.users = ",".join(existing_users)
-            await session.commit()
+        await session.commit()
+
 
     @connection
     async def count_done_captcha(session,link_name,user_id):

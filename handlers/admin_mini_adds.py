@@ -22,6 +22,14 @@ async def mini_adds_handler(callback:CallbackQuery,state:FSMContext):
     await callback.message.answer('*Выберите тип мини рекламы*',parse_mode='Markdown',reply_markup=kb.mini_adds_choose)
 
 
+@admin.callback_query(F.data.startswith('choose_'))
+async def choose_type_job(callback:CallbackQuery):
+    await callback.message.delete()
+    type = callback.data.removeprefix("choose_")
+    keyboard = await kb.mini_adds_menu(type)
+    await callback.message.answer('*Выберите действие:*',parse_mode='Markdown',reply_markup=keyboard)
+
+
 @admin.callback_query(F.data.startswith('Mini_'))
 async def to_mini_adds(callback:CallbackQuery):
     await callback.message.delete()
@@ -32,26 +40,29 @@ async def to_mini_adds(callback:CallbackQuery):
             add_name = 'Стартовая'
         else:
             add_name = 'Базовая'
-        text=f"""
+        for mini_adds_list in mini_adds:
+            text = f"""
 <b>{add_name} мини реклама</b>
 
 <b>Текст рекламы:</b>
-{mini_adds.text}
+{mini_adds_list.text}
 
 <b>Текст кнопки:</b> 
-{mini_adds.button_text}
+{mini_adds_list.button_text}
 
 <b>Ссылка кнопки:</b> 
-{mini_adds.url}
+{mini_adds_list.url}
 """
-        keyboard = await kb.mini_adds_set(type)
-    elif type == 'start':
-        text = '<b>У вас нет стартовой рекламы</b>'
+            keyboard = await kb.mini_adds_set(mini_adds_list.id)
+            await callback.message.answer(text, parse_mode='HTML', reply_markup=keyboard)
+
+    else:
+        if type == 'start':
+            text = '<b>У вас нет стартовой рекламы</b>'
+        elif type == 'base':
+            text = '<b>У вас нет базовой рекламы</b>'
         keyboard = await kb.add_mini_adds(type)
-    elif type == 'base':
-        text = '<b>У вас нет базовой рекламы</b>'
-        keyboard = await kb.add_mini_adds(type)
-    await callback.message.answer(text,parse_mode='HTML',reply_markup=keyboard)
+        await callback.message.answer(text, parse_mode='HTML', reply_markup=keyboard)
 
 @admin.callback_query(F.data.startswith('CreateMiniAdds_'))
 async def create_mini_adds(callback:CallbackQuery,state:FSMContext):
@@ -81,9 +92,9 @@ async def wait_url_button(message:Message,state:FSMContext):
     url = message.text
     data = await state.get_data()
     type = data.get('type') 
-    text = data.get('text')
+    add_text = data.get('text')
     button_text = data.get('button_text')
-    await MiniAddsFunction.set_mini_add(type,text,button_text,url)
+    await MiniAddsFunction.set_mini_add(type,add_text,button_text,url)
     await message.answer('*✅ Данные успешно сохранены*',parse_mode='Markdown')
 
     mini_adds = await MiniAddsFunction.get_mini_add(type)
@@ -95,13 +106,13 @@ async def wait_url_button(message:Message,state:FSMContext):
 <b>{add_name} мини реклама</b>
 
 <b>Текст рекламы:</b>
-{mini_adds.text}
+{add_text}
 
 <b>Текст кнопки:</b> 
-{mini_adds.button_text}
+{button_text}
 
 <b>Ссылка кнопки:</b> 
-{mini_adds.url}
+{url}
 """
     keyboard = await kb.mini_adds_set(type)
     await message.answer(text,parse_mode='HTML',reply_markup=keyboard)

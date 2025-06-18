@@ -130,7 +130,7 @@ async def subgram_captcha(message: Message|CallbackQuery,type):
 
 
 @user.callback_query(F.data.startswith ('SubgramCaptcha_'))
-async def check_subgram_capthca(callback: CallbackQuery):
+async def check_subgram_capthca(callback: CallbackQuery,state:FSMContext):
     from handlers.user_profile import user_profile_handler
     from handlers.user_top import top_handler
     from handlers.user import bonus, withdraw
@@ -149,9 +149,9 @@ async def check_subgram_capthca(callback: CallbackQuery):
 
     if is_subscribed:
         if type == 'profile':
-            await user_profile_handler(callback)
+            await user_profile_handler(callback,state)
         elif type == 'top':
-            await top_handler(callback)
+            await top_handler(callback,state)
         elif type == 'bonus':
             await bonus(callback)
         elif type == 'withdraw':

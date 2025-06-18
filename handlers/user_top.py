@@ -10,6 +10,7 @@ from function.mini_adds_req import MiniAdds as MiniAddsFunction
 from handlers.user_check import subgram_captcha
 from database.requests import get_user
 import asyncio 
+import random
 
 image_url = 'images/image_top.jpg'
 photo = FSInputFile(image_url)
@@ -18,6 +19,8 @@ photo = FSInputFile(image_url)
 @user.message(F.text == '🏆Топ')
 async def top_handler(message: Message|CallbackQuery,state:FSMContext):
     await state.clear()
+    from handlers.user import add_keyboard_handler
+
     reply_target = message.message if isinstance(message, CallbackQuery) else message
     type = 'top'
     user = await get_user(message.from_user.id)
@@ -27,12 +30,28 @@ async def top_handler(message: Message|CallbackQuery,state:FSMContext):
     
     if not await subgram_captcha(message,type):
         return
-    mini_add_base  = await MiniAddsFunction.get_mini_add('base')
-    if mini_add_base:
-        keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
-        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
-        await asyncio.sleep(2)
     
+    # mini_add_base_list  = await MiniAddsFunction.get_mini_add('base')
+    # if mini_add_base_list:
+    #     mini_add_base = random.choice(mini_add_base_list)
+    #     keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
+    #     await reply_target.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+    #     await asyncio.sleep(1)
+
+
+    # 🔀 Случайный выбор: 50% базовая реклама, 50% кнопка "подарок"
+    mini_add_base_list = await MiniAddsFunction.get_mini_add('base')
+    if mini_add_base_list and random.choice([True, False]):
+        # Показываем базовую рекламу
+        mini_add_base = random.choice(mini_add_base_list)
+        keyboard = await kb.mini_add(mini_add_base.button_text, mini_add_base.url)
+        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard)
+        await asyncio.sleep(1)
+    else:
+        # Показываем клавиатуру "Выберите подарок"
+        await add_keyboard_handler(message)
+
+
     top_users = await UserFunction.get_user_top_5_referrers(1)
 
     medals = ["🥇", "🥈", "🥉", "✨", "✨"]

@@ -106,6 +106,7 @@ async def withdraw_req_handler(callback: CallbackQuery):
             f"🆔 *TG ID:* `{withdrawal.tg_id}`\n"
             f"🌍 *GEO:* {withdrawal.user_lang}\n"
             f"💰 *Сумма:* `{withdrawal.amount} ⭐️`\n"
+            f"🎁 *Подарок:* {withdrawal.emoji}\n"
             f"⏳ *Статус:* _Ожидает выполнения_"
         )
 
@@ -125,7 +126,7 @@ async def complete_withdraw(callback: CallbackQuery, bot: Bot):
     if success:
         await bot.send_message(
             GROUP_ID,
-            f"*✅ #Заявка_{transaction.id} выполнена, отправили подарок за {transaction.amount}⭐️.*\n\n"
+            f"*✅ #Заявка_{transaction.id} выполнена, отправили подарок за {transaction.amount}⭐️({transaction.emoji}).*\n\n"
             '*Создать заявку: @FreeStard_bot*',
             reply_to_message_id=transaction.message_id, parse_mode='Markdown'
         )

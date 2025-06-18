@@ -80,6 +80,7 @@ async def link_stat_handler(callback:CallbackQuery):
 
 *Ссылка*: `https://t.me/FreeStard_bot?start={link.link_name}`
 
+🖱*Все клики*: *{link.all_clicks}*
 👤*Всего зашло*: *{link.clicks}*
 ✅*Прошли капчу: {link.done_captcha}* 
 💎*Premium: {link.premium}*

@@ -99,6 +99,7 @@ class Transaction(Base):
     created: Mapped[datetime] = mapped_column(DateTime,default=datetime.now())
     message_id:Mapped[int] = mapped_column(Integer,nullable=True)
     user_lang: Mapped[str] = mapped_column(String, nullable=True)
+    emoji: Mapped[str] = mapped_column(String,nullable=True)
 
 class TaskState(Base):
     __tablename__ = 'task_states'
@@ -139,7 +140,8 @@ class LinkStat(Base):
     __tablename__ = 'links_stat'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    link_name: Mapped[str] = mapped_column(String,nullable=True)    
+    link_name: Mapped[str] = mapped_column(String,nullable=True)
+    all_clicks: Mapped[int] = mapped_column(Integer,default=0,nullable=True)    
     clicks: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
     done_captcha: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
     premium: Mapped[int] = mapped_column(Integer,default=0,nullable=True)
