@@ -21,7 +21,7 @@ def connection(func):
 @connection
 async def set_user(session, tg_id, username, referrer_id,lang):
     user = await session.scalar(select(User).where(User.tg_id == tg_id))
-    allowed_langs = ["ru", "en", "kk", "uk", "uz", "be"]
+    allowed_langs = ["ru", "kk", "uk", "uz", "be"]
 
     if not user:
         #is_allowed_geo = lang.lower() in allowed_langs

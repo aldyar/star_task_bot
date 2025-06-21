@@ -54,7 +54,7 @@ async def user_profile_handler(message:Message|CallbackQuery,state:FSMContext):
         # Показываем базовую рекламу
         mini_add_base = random.choice(mini_add_base_list)
         keyboard = await kb.mini_add(mini_add_base.button_text, mini_add_base.url)
-        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard)
+        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard,disable_web_page_preview=True)
         await asyncio.sleep(1)
     else:
         # Показываем клавиатуру "Выберите подарок"

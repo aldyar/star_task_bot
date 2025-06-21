@@ -50,7 +50,7 @@ async def cmd_start(message: Message, state: FSMContext,bot:Bot):
     if mini_add_base_list:
         mini_add_base = random.choice(mini_add_base_list)
         keyboard = await kb.mini_add(mini_add_base.button_text,mini_add_base.url)
-        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard)
+        await message.answer(mini_add_base.text,parse_mode='HTML',reply_markup=keyboard,disable_web_page_preview=True)
         await asyncio.sleep(1)
 
     user = await get_user(message.from_user.id)
@@ -179,7 +179,7 @@ async def get_task_hander(message: Message | CallbackQuery,state: FSMContext):
         # Показываем базовую рекламу
         mini_add_base = random.choice(mini_add_base_list)
         keyboard = await kb.mini_add(mini_add_base.button_text, mini_add_base.url)
-        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard)
+        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard,disable_web_page_preview=True)
         await asyncio.sleep(1)
     else:
         # Показываем клавиатуру "Выберите подарок"
@@ -411,7 +411,7 @@ async def bonus(message: Message|CallbackQuery):
         # Показываем базовую рекламу
         mini_add_base = random.choice(mini_add_base_list)
         keyboard = await kb.mini_add(mini_add_base.button_text, mini_add_base.url)
-        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard)
+        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard,disable_web_page_preview=True)
         await asyncio.sleep(1)
     else:
         # Показываем клавиатуру "Выберите подарок"
@@ -584,7 +584,7 @@ async def ref_system(message: Message | CallbackQuery):
         # Показываем базовую рекламу
         mini_add_base = random.choice(mini_add_base_list)
         keyboard = await kb.mini_add(mini_add_base.button_text, mini_add_base.url)
-        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard)
+        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard,disable_web_page_preview=True)
         await asyncio.sleep(1)
     else:
         # Показываем клавиатуру "Выберите подарок"
@@ -647,7 +647,7 @@ async def withdraw(message: Message | CallbackQuery):
         # Показываем базовую рекламу
         mini_add_base = random.choice(mini_add_base_list)
         keyboard = await kb.mini_add(mini_add_base.button_text, mini_add_base.url)
-        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard)
+        await reply_target.answer(mini_add_base.text, parse_mode='HTML', reply_markup=keyboard,disable_web_page_preview=True)
         await asyncio.sleep(1)
     else:
         # Показываем клавиатуру "Выберите подарок"
